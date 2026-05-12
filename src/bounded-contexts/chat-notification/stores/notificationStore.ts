@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { chatApi } from '@chat/api/chatApi'
 import { normalizeError } from '@shared/utils/errorMapper'
-import type { NotificationItem } from '@chat/types/chat.types'
+import type { NotificationItem, NotificationResponse } from '@chat/types/chat.types'
 
 export const useNotificationStore = defineStore('notifications', () => {
   const notifications = ref<NotificationItem[]>([])
@@ -15,9 +15,16 @@ export const useNotificationStore = defineStore('notifications', () => {
     error.value = null
     try {
       const response = await chatApi.getNotifications(params)
-      notifications.value = response.data
+      // Backend may return either a paginated object ({ data: [...] }) or a plain array.
+      const list = Array.isArray(response)
+        ? response
+        : Array.isArray((response as NotificationResponse).data)
+          ? (response as NotificationResponse).data
+          : []
+      notifications.value = list
     } catch (e) {
       error.value = normalizeError(e).message
+      notifications.value = []
     } finally {
       loading.value = false
     }
