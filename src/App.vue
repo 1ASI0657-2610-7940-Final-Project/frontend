@@ -1,3 +1,3 @@
 <template>
-  <main>Frontend base scaffold</main>
+  <RouterView />
 </template>
