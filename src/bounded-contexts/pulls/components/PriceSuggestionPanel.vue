@@ -36,13 +36,13 @@ const suggest = async () => {
         <select v-model="form.freelancerExperience"><option>JUNIOR</option><option>INTERMEDIATE</option><option>SENIOR</option></select>
       </label>
     </div>
-    <button class="suggest" @click="suggest">Get Suggestion</button>
+    <button class="suggest" type="button" @click="suggest">Get Suggestion</button>
     <div class="result" v-if="store.priceSuggestion">
       <span class="muted">Suggested Range</span>
       <strong>{{ store.priceSuggestion.suggestedMinPrice }} - {{ store.priceSuggestion.suggestedMaxPrice }} {{ store.priceSuggestion.currency }}</strong>
       <div class="actions">
-        <button @click="emit('apply', store.priceSuggestion.suggestedMinPrice)">Use Min</button>
-        <button @click="emit('apply', store.priceSuggestion.suggestedMaxPrice)">Use Max</button>
+        <button type="button" @click="emit('apply', store.priceSuggestion.suggestedMinPrice)">Use Min</button>
+        <button type="button" @click="emit('apply', store.priceSuggestion.suggestedMaxPrice)">Use Max</button>
       </div>
     </div>
   </section>

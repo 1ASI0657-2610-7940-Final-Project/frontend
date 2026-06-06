@@ -6,6 +6,7 @@ import Toast from '../../../shared/components/Toast.vue'
 import PriceSuggestionPanel from './PriceSuggestionPanel.vue'
 import { useEngagementStore } from '@pulls/stores/engagementStore'
 import type { CreateProjectRequestPayload } from '@pulls/types/engagement.types'
+import { normalizeError } from '@shared/utils/errorMapper'
 
 const props = defineProps<{ open: boolean; serviceId: string; freelancerId: string }>()
 const emit = defineEmits<{ close: [] }>()
@@ -21,34 +22,51 @@ const form = ref<CreateProjectRequestPayload>({
   proposedDeliveryDays: 7
 })
 const success = ref('')
+const error = ref('')
+const submitting = ref(false)
 
 const valid = computed(() => form.value.message.trim().length >= 10 && form.value.proposedPrice > 0 && form.value.proposedDeliveryDays > 0)
 
 const submit = async () => {
   if (!valid.value) return
-  await store.createProjectRequest({ ...form.value, serviceId: props.serviceId, freelancerId: props.freelancerId })
-  success.value = 'Request sent successfully.'
-  setTimeout(() => {
-    emit('close')
-    router.push('/client/requests')
-  }, 450)
+  submitting.value = true
+  error.value = ''
+  success.value = ''
+  try {
+    await store.createProjectRequest({
+      ...form.value,
+      currency: form.value.currency.trim().toUpperCase(),
+      serviceId: props.serviceId,
+      freelancerId: props.freelancerId
+    })
+    success.value = 'Request sent successfully.'
+    setTimeout(() => {
+      emit('close')
+      router.push('/client/requests')
+    }, 450)
+  } catch (e) {
+    error.value = normalizeError(e).message
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
 <template>
   <Modal :open="open" title="Request Service" @close="emit('close')">
-    <div class="form">
+    <form class="form" @submit.prevent="submit">
       <Toast v-if="success" :message="success" type="success" />
+      <Toast v-else-if="error" :message="error" type="error" />
       <label><span>Message</span><textarea rows="4" v-model="form.message" /></label>
       <label><span>Proposed Price</span><input type="number" min="1" step="0.01" v-model.number="form.proposedPrice" /></label>
-      <label><span>Currency</span><input v-model="form.currency" /></label>
+      <label><span>Currency</span><input v-model="form.currency" maxlength="3" /></label>
       <label><span>Proposed Delivery Days</span><input type="number" min="1" v-model.number="form.proposedDeliveryDays" /></label>
       <PriceSuggestionPanel @apply="(value) => (form.proposedPrice = value)" />
       <div class="actions">
-        <button class="secondary" @click="emit('close')">Cancel</button>
-        <button class="primary" :disabled="!valid" @click="submit">Send Request</button>
+        <button class="secondary" type="button" @click="emit('close')">Cancel</button>
+        <button class="primary" type="submit" :disabled="!valid || submitting">{{ submitting ? 'Sending...' : 'Send Request' }}</button>
       </div>
-    </div>
+    </form>
   </Modal>
 </template>
 
