@@ -3,9 +3,18 @@ import { useAuthStore } from '../../app/stores/authStore'
 import type { ErrorResponse } from '../types/common.types'
 
 const ApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api'
-const ChatServiceUrl = (import.meta.env.VITE_CHAT_SERVICE_URL ?? '').trim().replace(/\/$/, '')
-const chatApiBase = ChatServiceUrl ? `${ChatServiceUrl}/api/v1/chat` : `${ApiBaseUrl}/chat`
-const chatNotificationsBase = ChatServiceUrl ? `${ChatServiceUrl}/api/v1/chat/notifications` : `${ApiBaseUrl}/notifications`
+const resolveBase = (envUrl: string | undefined, fallbackPath: string) => {
+  const resolved = (envUrl ?? '').trim().replace(/\/$/, '')
+  return resolved ? resolved : `${ApiBaseUrl}${fallbackPath}`
+}
+
+const accessBase = resolveBase(import.meta.env.VITE_ACCESS_PROFILE_SERVICE_URL, '/access')
+const profileBase = resolveBase(import.meta.env.VITE_ACCESS_PROFILE_SERVICE_URL, '/profile')
+const marketplaceBase = resolveBase(import.meta.env.VITE_GIG_MARKETPLACE_SERVICE_URL, '/marketplace')
+const pullsBase = resolveBase(import.meta.env.VITE_PULLS_SERVICE_URL, '/engagement')
+const chatServiceUrl = (import.meta.env.VITE_CHAT_SERVICE_URL ?? '').trim().replace(/\/$/, '')
+const chatApiBase = chatServiceUrl ? `${chatServiceUrl}/api/v1/chat` : `${ApiBaseUrl}/chat`
+const chatNotificationsBase = chatServiceUrl ? `${chatServiceUrl}/api/v1/chat/notifications` : `${ApiBaseUrl}/notifications`
 
 const createClient = (baseURL: string): AxiosInstance => {
   const client = axios.create({ baseURL, timeout: 15000 })
@@ -47,10 +56,10 @@ const createClient = (baseURL: string): AxiosInstance => {
 }
 
 export const apiClients = {
-  access: createClient(`${ApiBaseUrl}/access`),
-  profile: createClient(`${ApiBaseUrl}/profile`),
-  marketplace: createClient(`${ApiBaseUrl}/marketplace`),
-  engagement: createClient(`${ApiBaseUrl}/engagement`),
+  access: createClient(accessBase),
+  profile: createClient(profileBase),
+  marketplace: createClient(marketplaceBase),
+  engagement: createClient(pullsBase),
   chat: createClient(chatApiBase),
   notifications: createClient(chatNotificationsBase)
 }
