@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onBeforeUnmount, onMounted } from 'vue'
 import { useEngagementStore } from '@pulls/stores/engagementStore'
 import RequestStatusBadge from '../components/RequestStatusBadge.vue'
 import EmptyState from '../../../shared/components/EmptyState.vue'
@@ -8,7 +8,30 @@ import ErrorState from '../../../shared/components/ErrorState.vue'
 import { formatDate } from '../../../shared/utils/formatDate'
 
 const store = useEngagementStore()
-onMounted(async () => { await store.fetchOutgoingRequests() })
+const refreshOutgoingRequests = async () => {
+  await store.fetchOutgoingRequests()
+}
+
+const handleWindowFocus = () => {
+  void refreshOutgoingRequests()
+}
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    void refreshOutgoingRequests()
+  }
+}
+
+onMounted(async () => {
+  await refreshOutgoingRequests()
+  window.addEventListener('focus', handleWindowFocus)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', handleWindowFocus)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
 </script>
 
 <template>
