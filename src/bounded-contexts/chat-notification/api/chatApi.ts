@@ -21,7 +21,7 @@ export const chatApi = {
   sendMessage: (conversationId: string, payload: SendMessagePayload) =>
     http.post<ChatMessage>(apiClients.chat, `/conversations/${conversationId}/messages`, payload),
   getNotifications: (params?: { unreadOnly?: boolean; page?: number; pageSize?: number }) =>
-    http.get<NotificationResponse | NotificationItem[]>(apiClients.notifications, '/', { params }),
+    http.get<NotificationResponse | NotificationItem[]>(apiClients.notifications, '', { params }),
   markNotificationRead: (id: string) => http.patch<void>(apiClients.notifications, `/${id}/read`, {}),
   markAllNotificationsRead: () => http.patch<void>(apiClients.notifications, '/read-all', {}),
   reportUser: (payload: ReportUserPayload) => http.post<{ id: string; reportedUserId: string; status: string; createdAt: string }>(apiClients.chat, '/reports', payload),

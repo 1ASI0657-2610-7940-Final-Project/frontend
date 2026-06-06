@@ -1,19 +1,64 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { chatApi } from '@chat/api/chatApi'
+import { chatRealtimeClient } from '@chat/services/chatRealtime'
 import { normalizeError } from '@shared/utils/errorMapper'
-import type { ChatMessage, ConversationDetail, ConversationSummary, CreateConversationPayload } from '@chat/types/chat.types'
+import type { ChatMessage, ChatMessageCreatedEvent, ConversationDetail, ConversationSummary, CreateConversationPayload } from '@chat/types/chat.types'
+import { useAuthStore } from '../../../app/stores/authStore'
 
 export const useChatStore = defineStore('chat', () => {
+  const authStore = useAuthStore()
   const conversations = ref<ConversationSummary[]>([])
   const selectedConversation = ref<ConversationDetail | null>(null)
   const messages = ref<ChatMessage[]>([])
-  const pollingTimer = ref<number | null>(null)
+  const activeConversationId = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
   const sortBySentAtAsc = (list: ChatMessage[]) => {
     return [...list].sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime())
+  }
+
+  const upsertMessage = (message: ChatMessage) => {
+    if (messages.value.some((item) => item.id === message.id)) {
+      return
+    }
+    messages.value = sortBySentAtAsc([...messages.value, message])
+  }
+
+  const updateConversationPreview = (event: ChatMessageCreatedEvent) => {
+    conversations.value = conversations.value.map((conversation) => {
+      if (conversation.id !== event.conversationId) {
+        return conversation
+      }
+
+      const isActiveConversation = selectedConversation.value?.id === event.conversationId
+      return {
+        ...conversation,
+        lastMessage: event.contentPreview || event.content,
+        lastMessageAt: event.occurredAt,
+        unreadCount: isActiveConversation ? 0 : (conversation.unreadCount ?? 0) + 1
+      }
+    })
+  }
+
+  const handleRealtimeMessage = (event: ChatMessageCreatedEvent) => {
+    upsertMessage({
+      id: event.messageId,
+      conversationId: event.conversationId,
+      senderId: event.senderId,
+      content: event.content,
+      sentAt: event.occurredAt
+    })
+    updateConversationPreview(event)
+  }
+
+  const connectRealtime = () => {
+    chatRealtimeClient.configure(() => authStore.token, handleRealtimeMessage)
+    chatRealtimeClient.connect()
+    if (activeConversationId.value) {
+      chatRealtimeClient.subscribeConversation(activeConversationId.value)
+    }
   }
 
   const fetchConversations = async () => {
@@ -43,6 +88,8 @@ export const useChatStore = defineStore('chat', () => {
     loading.value = true
     try {
       await Promise.all([fetchConversation(id), fetchMessages(id, { page: 1, pageSize: 30 })])
+      activeConversationId.value = id
+      connectRealtime()
     } catch (e) {
       error.value = normalizeError(e).message
     } finally {
@@ -52,30 +99,20 @@ export const useChatStore = defineStore('chat', () => {
 
   const sendMessage = async (id: string, payload: { content: string }) => {
     const sent = await chatApi.sendMessage(id, payload)
-    messages.value = sortBySentAtAsc([...messages.value, sent])
+    upsertMessage(sent)
     return sent
   }
 
-  const stopPolling = () => {
-    if (pollingTimer.value) {
-      window.clearInterval(pollingTimer.value)
-      pollingTimer.value = null
-    }
-  }
-
-  const startPolling = (id: string, interval = 7000) => {
-    stopPolling()
-    pollingTimer.value = window.setInterval(async () => {
-      if (!selectedConversation.value) return
-      await fetchMessages(id, { page: 1, pageSize: 30 })
-    }, interval)
+  const disconnectRealtime = () => {
+    activeConversationId.value = null
+    chatRealtimeClient.disconnect()
   }
 
   return {
     conversations,
     selectedConversation,
     messages,
-    pollingTimer,
+    activeConversationId,
     loading,
     error,
     fetchConversations,
@@ -84,7 +121,7 @@ export const useChatStore = defineStore('chat', () => {
     fetchConversation,
     fetchMessages,
     sendMessage,
-    startPolling,
-    stopPolling
+    connectRealtime,
+    disconnectRealtime
   }
 })

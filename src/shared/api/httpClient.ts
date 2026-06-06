@@ -3,6 +3,9 @@ import { useAuthStore } from '../../app/stores/authStore'
 import type { ErrorResponse } from '../types/common.types'
 
 const ApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api'
+const ChatServiceUrl = (import.meta.env.VITE_CHAT_SERVICE_URL ?? '').trim().replace(/\/$/, '')
+const chatApiBase = ChatServiceUrl ? `${ChatServiceUrl}/api/v1/chat` : `${ApiBaseUrl}/chat`
+const chatNotificationsBase = ChatServiceUrl ? `${ChatServiceUrl}/api/v1/chat/notifications` : `${ApiBaseUrl}/notifications`
 
 const createClient = (baseURL: string): AxiosInstance => {
   const client = axios.create({ baseURL, timeout: 15000 })
@@ -48,8 +51,8 @@ export const apiClients = {
   profile: createClient(`${ApiBaseUrl}/profile`),
   marketplace: createClient(`${ApiBaseUrl}/marketplace`),
   engagement: createClient(`${ApiBaseUrl}/engagement`),
-  chat: createClient(`${ApiBaseUrl}/chat`),
-  notifications: createClient(`${ApiBaseUrl}/notifications`)
+  chat: createClient(chatApiBase),
+  notifications: createClient(chatNotificationsBase)
 }
 
 const request = async <T>(client: AxiosInstance, config: AxiosRequestConfig): Promise<T> => {

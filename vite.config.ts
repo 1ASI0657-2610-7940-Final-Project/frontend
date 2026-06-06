@@ -19,19 +19,19 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/access': {
-        target: 'https://gigu-access-profile-service-oawg43e6ea-uc.a.run.app',
+        target: 'https://gigu-access-profile-service-149855215912.us-central1.run.app',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api\/access/, '/api/v1/access')
       },
       '/api/profile': {
-        target: 'https://gigu-access-profile-service-oawg43e6ea-uc.a.run.app',
+        target: 'https://gigu-access-profile-service-149855215912.us-central1.run.app',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api\/profile/, '/api/v1/profile')
       },
       '/api/marketplace': {
-        target: 'https://gigu-gig-marketplace-service-oawg43e6ea-uc.a.run.app',
+        target: 'https://gigu-gig-marketplace-service-149855215912.us-central1.run.app',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api\/marketplace/, '/api/v1/marketplace')
@@ -43,13 +43,13 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/engagement/, '/api/v1/engagement')
       },
       '/api/chat': {
-        target: 'https://gigu-chat-notification-service-oawg43e6ea-uc.a.run.app',
+        target: 'https://gigu-chat-notification-service-149855215912.us-central1.run.app',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api\/chat/, '/api/v1/chat')
       },
       '/api/notifications': {
-        target: 'https://gigu-chat-notification-service-oawg43e6ea-uc.a.run.app',
+        target: 'https://gigu-chat-notification-service-149855215912.us-central1.run.app',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api\/notifications/, '/api/v1/notifications')

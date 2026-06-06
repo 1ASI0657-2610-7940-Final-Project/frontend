@@ -23,7 +23,6 @@ const selectedParticipant = computed(() => chatStore.conversations.find((c) => c
 
 const selectConversation = async (id: string) => {
   await chatStore.selectConversation(id)
-  chatStore.startPolling(id)
   await nextTick()
   threadRef.value?.scrollToBottom()
 }
@@ -46,7 +45,7 @@ onMounted(async () => {
 })
 
 onBeforeRouteLeave(() => {
-  chatStore.stopPolling()
+  chatStore.disconnectRealtime()
 })
 </script>
 

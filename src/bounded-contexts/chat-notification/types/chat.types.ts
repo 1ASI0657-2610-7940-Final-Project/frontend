@@ -13,7 +13,7 @@ export interface ConversationSummary {
 
 export interface ConversationDetail {
   id: string
-  participants: string[]
+  participants: ConversationParticipant[]
   projectId?: string
   createdAt: string
 }
@@ -29,6 +29,18 @@ export interface ChatMessage {
   senderId: string
   content: string
   sentAt: string
+}
+
+export interface ChatMessageCreatedEvent {
+  eventType: string
+  messageId: string
+  conversationId: string
+  senderId: string
+  receiverId?: string | null
+  content: string
+  contentPreview: string
+  occurredAt: string
+  metadata: Record<string, string>
 }
 
 export interface MessagesResponse {
