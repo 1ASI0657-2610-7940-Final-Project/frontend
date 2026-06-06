@@ -67,6 +67,7 @@ export const useChatStore = defineStore('chat', () => {
     try {
       conversations.value = await chatApi.getConversations()
     } catch (e) {
+      console.error('[chat] failed to load conversations', e)
       error.value = normalizeError(e).message
     } finally {
       loading.value = false
@@ -76,12 +77,22 @@ export const useChatStore = defineStore('chat', () => {
   const createConversation = async (payload: CreateConversationPayload) => chatApi.createConversation(payload)
 
   const fetchConversation = async (id: string) => {
-    selectedConversation.value = await chatApi.getConversation(id)
+    try {
+      selectedConversation.value = await chatApi.getConversation(id)
+    } catch (e) {
+      console.error('[chat] failed to load conversation detail', { conversationId: id, error: e })
+      throw e
+    }
   }
 
   const fetchMessages = async (id: string, params?: { page?: number; pageSize?: number }) => {
-    const response = await chatApi.getMessages(id, params)
-    messages.value = sortBySentAtAsc(response.data ?? [])
+    try {
+      const response = await chatApi.getMessages(id, params)
+      messages.value = sortBySentAtAsc(response.data ?? [])
+    } catch (e) {
+      console.error('[chat] failed to load messages', { conversationId: id, params, error: e })
+      throw e
+    }
   }
 
   const selectConversation = async (id: string) => {
@@ -91,6 +102,7 @@ export const useChatStore = defineStore('chat', () => {
       activeConversationId.value = id
       connectRealtime()
     } catch (e) {
+      console.error('[chat] failed to select conversation', { conversationId: id, error: e })
       error.value = normalizeError(e).message
     } finally {
       loading.value = false
@@ -98,9 +110,14 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   const sendMessage = async (id: string, payload: { content: string }) => {
-    const sent = await chatApi.sendMessage(id, payload)
-    upsertMessage(sent)
-    return sent
+    try {
+      const sent = await chatApi.sendMessage(id, payload)
+      upsertMessage(sent)
+      return sent
+    } catch (e) {
+      console.error('[chat] failed to send message', { conversationId: id, error: e })
+      throw e
+    }
   }
 
   const disconnectRealtime = () => {

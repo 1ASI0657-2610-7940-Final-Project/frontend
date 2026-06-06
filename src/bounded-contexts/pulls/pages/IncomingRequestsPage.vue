@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEngagementStore } from '@pulls/stores/engagementStore'
 import RequestDecisionModal from '../components/RequestDecisionModal.vue'
@@ -15,6 +15,19 @@ const router = useRouter()
 const open = ref(false)
 const mode = ref<'ACCEPTED' | 'REJECTED'>('ACCEPTED')
 const requestId = ref('')
+const refreshIncomingRequests = async () => {
+  await store.fetchIncomingRequests()
+}
+
+const handleWindowFocus = () => {
+  void refreshIncomingRequests()
+}
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    void refreshIncomingRequests()
+  }
+}
 
 const openDecision = (id: string, next: 'ACCEPTED' | 'REJECTED') => {
   requestId.value = id
@@ -32,7 +45,16 @@ const submitDecision = async (payload: DecideRequestPayload) => {
   }
 }
 
-onMounted(async () => { await store.fetchIncomingRequests() })
+onMounted(async () => {
+  await refreshIncomingRequests()
+  window.addEventListener('focus', handleWindowFocus)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', handleWindowFocus)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
 </script>
 
 <template>
