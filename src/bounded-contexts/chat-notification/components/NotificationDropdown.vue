@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNotificationStore } from '@chat/stores/notificationStore'
 import { useAuthStore } from '../../../app/stores/authStore'
@@ -9,14 +8,36 @@ const store = useNotificationStore()
 const auth = useAuthStore()
 const router = useRouter()
 const open = ref(false)
+const canConnect = computed(() => auth.isAuthenticated && Boolean(auth.user?.id))
 
 const openNotifications = () => {
   open.value = false
   router.push('/notifications')
 }
 
+const syncRealtime = () => {
+  if (canConnect.value && auth.user?.id) {
+    store.connectRealtime()
+    store.fetchUnreadNotifications().catch(() => {})
+    return
+  }
+
+  store.disconnectRealtime()
+}
+
 onMounted(async () => {
-  if (auth.isAuthenticated) await store.fetchUnreadNotifications()
+  syncRealtime()
+})
+
+watch(
+  () => [auth.isAuthenticated, auth.user?.id],
+  () => {
+    syncRealtime()
+  }
+)
+
+onBeforeUnmount(() => {
+  store.disconnectRealtime()
 })
 </script>
 

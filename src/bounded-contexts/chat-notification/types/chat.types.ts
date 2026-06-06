@@ -65,6 +65,19 @@ export interface NotificationItem {
   resourceId?: string
 }
 
+export interface NotificationRealtimeEvent {
+  eventType: string
+  notificationId: string
+  recipientId: string
+  type: string
+  title: string
+  message: string
+  resourceType?: string | null
+  resourceId?: string | null
+  read: boolean
+  createdAt: string
+}
+
 export interface NotificationResponse {
   data: NotificationItem[]
   page: number

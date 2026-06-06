@@ -8,7 +8,7 @@ const profileBase = `${ApiBaseUrl}/profile`
 const marketplaceBase = `${ApiBaseUrl}/marketplace`
 const pullsBase = `${ApiBaseUrl}/engagement`
 const chatApiBase = `${ApiBaseUrl}/chat`
-const chatNotificationsBase = `${ApiBaseUrl}/notifications`
+const chatNotificationsBase = `${ApiBaseUrl}/chat/notifications`
 
 const createClient = (baseURL: string): AxiosInstance => {
   const client = axios.create({ baseURL, timeout: 15000 })
