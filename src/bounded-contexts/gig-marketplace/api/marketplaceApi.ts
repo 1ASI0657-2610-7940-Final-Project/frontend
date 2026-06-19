@@ -36,8 +36,31 @@ const normalizeListItem = (item: Record<string, unknown>): ServicesListResponse[
 
 const normalizeDetail = (service: Record<string, unknown>): ServiceDetail => {
   const freelancer = (service.freelancer ?? {}) as Record<string, unknown>
+  const media = Array.isArray(service.media)
+    ? service.media.map((item) => {
+        const source = item as Record<string, unknown>
+        return {
+          id: String(source.id ?? ''),
+          serviceId: String(source.serviceId ?? ''),
+          url: String(source.url ?? ''),
+          type: String(source.type ?? 'IMAGE'),
+          primary: Boolean(source.primary ?? false),
+          bucket: typeof source.bucket === 'string' ? source.bucket : undefined,
+          objectPath: typeof source.objectPath === 'string' ? source.objectPath : undefined,
+          contentType: typeof source.contentType === 'string' ? source.contentType : undefined,
+          sizeBytes: typeof source.sizeBytes === 'number' ? source.sizeBytes : undefined,
+          sortOrder: typeof source.sortOrder === 'number' ? source.sortOrder : undefined,
+          createdAt: typeof source.createdAt === 'string' ? source.createdAt : undefined
+        }
+      })
+    : []
   return {
     ...(service as unknown as ServiceDetail),
+    media,
+    thumbnailUrl:
+      typeof service.thumbnailUrl === 'string'
+        ? service.thumbnailUrl
+        : media.find((item) => item.primary)?.url ?? media[0]?.url ?? '',
     freelancer: {
       id: String(freelancer.id ?? ''),
       displayName: String(freelancer.displayName ?? 'Freelancer'),

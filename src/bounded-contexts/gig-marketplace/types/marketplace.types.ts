@@ -35,9 +35,16 @@ export interface Category {
 
 export interface ServiceMedia {
   id: string
+  serviceId?: string
   url: string
   type: 'IMAGE' | 'VIDEO' | string
   primary: boolean
+  bucket?: string
+  objectPath?: string
+  contentType?: string
+  sizeBytes?: number
+  sortOrder?: number
+  createdAt?: string
 }
 
 export interface ServiceDetail {
@@ -57,6 +64,7 @@ export interface ServiceDetail {
     reviewsCount?: number
   }
   media: ServiceMedia[]
+  thumbnailUrl?: string
 }
 
 export interface MyServiceItem {
