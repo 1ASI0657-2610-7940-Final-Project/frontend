@@ -11,7 +11,7 @@ import ErrorState from '../../../shared/components/ErrorState.vue'
 import ReportUserModal from '@chat/components/ReportUserModal.vue'
 import { useChatStore } from '@chat/stores/chatStore'
 import { useAuthStore } from '../../../app/stores/authStore'
-import { getParticipantMeta } from '@chat/utils/chatHelpers'
+import { getConversationCounterpart, getParticipantMeta } from '@chat/utils/chatHelpers'
 
 const chatStore = useChatStore()
 const authStore = useAuthStore()
@@ -22,10 +22,14 @@ const threadRef = ref<InstanceType<typeof MessageThread> | null>(null)
 const chatShellRef = ref<HTMLElement | null>(null)
 
 const selectedId = computed(() => chatStore.selectedConversation?.id)
-const selectedParticipant = computed(() => chatStore.conversations.find((c) => c.id === selectedId.value)?.participants?.[0]?.id || '')
+const activeConversationSummary = computed(() => chatStore.conversations.find((c) => c.id === selectedId.value))
+const activeParticipant = computed(() =>
+  getConversationCounterpart(activeConversationSummary.value?.participants, authStore.user?.id)
+)
+const selectedParticipant = computed(() => activeParticipant.value?.id || '')
 
 const activeName = computed(() => {
-  return chatStore.conversations.find((c) => c.id === selectedId.value)?.participants?.[0]?.displayName || 'Conversation'
+  return activeParticipant.value?.displayName || 'Conversation'
 })
 
 const activeMeta = computed(() => {

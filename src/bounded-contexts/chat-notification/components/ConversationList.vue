@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { ConversationSummary } from '@chat/types/chat.types'
-import { getParticipantMeta } from '@chat/utils/chatHelpers'
+import { getConversationCounterpart, getParticipantMeta } from '@chat/utils/chatHelpers'
+import { useAuthStore } from '../../../app/stores/authStore'
 
 const props = defineProps<{ conversations: ConversationSummary[]; selectedId?: string }>()
 defineEmits<{ select: [id: string] }>()
 
 const searchQuery = ref('')
+const authStore = useAuthStore()
+
+const getCounterpart = (conversation: ConversationSummary) =>
+  getConversationCounterpart(conversation.participants, authStore.user?.id)
 
 const formatConversationCode = (value?: string) => {
   const raw = value?.trim()
@@ -20,7 +25,7 @@ const formatConversationCode = (value?: string) => {
 }
 
 const formatConversationTitle = (conversation: ConversationSummary) => {
-  const name = conversation.participants[0]?.displayName || 'Conversation'
+  const name = getCounterpart(conversation)?.displayName || 'Conversation'
   const code = formatConversationCode(conversation.projectId || conversation.id)
   return code ? `${name} - ${code}` : name
 }
@@ -50,7 +55,7 @@ const filteredConversations = computed(() => {
   if (!searchQuery.value.trim()) return props.conversations
   const q = searchQuery.value.toLowerCase()
   return props.conversations.filter((c) => {
-    const name = c.participants[0]?.displayName || ''
+    const name = getCounterpart(c)?.displayName || ''
     const msg = c.lastMessage || ''
     return name.toLowerCase().includes(q) || msg.toLowerCase().includes(q)
   })
@@ -95,24 +100,24 @@ const filteredConversations = computed(() => {
       >
         <!-- Left: Avatar -->
         <div class="avatar-container">
-          <template v-if="conversation.participants[0]">
+          <template v-if="getCounterpart(conversation)">
             <img 
-              v-if="getParticipantMeta(conversation.participants[0].displayName).avatar" 
-              :src="getParticipantMeta(conversation.participants[0].displayName).avatar!" 
+              v-if="getCounterpart(conversation)?.avatarUrl || getParticipantMeta(getCounterpart(conversation)!.displayName).avatar" 
+              :src="getCounterpart(conversation)?.avatarUrl || getParticipantMeta(getCounterpart(conversation)!.displayName).avatar!" 
               class="avatar-img" 
               alt="Avatar" 
             />
             <div 
               v-else 
               class="avatar-placeholder"
-              :class="getParticipantMeta(conversation.participants[0].displayName).initials?.toLowerCase()"
+              :class="getParticipantMeta(getCounterpart(conversation)!.displayName).initials?.toLowerCase()"
             >
-              {{ getParticipantMeta(conversation.participants[0].displayName).initials }}
+              {{ getParticipantMeta(getCounterpart(conversation)!.displayName).initials }}
             </div>
             <!-- Status Dot indicator -->
             <span 
               class="status-indicator" 
-              :class="{ online: getParticipantMeta(conversation.participants[0].displayName).online }"
+              :class="{ online: getParticipantMeta(getCounterpart(conversation)!.displayName).online }"
             ></span>
           </template>
         </div>

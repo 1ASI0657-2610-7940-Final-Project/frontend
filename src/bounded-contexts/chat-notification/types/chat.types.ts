@@ -1,6 +1,8 @@
 export interface ConversationParticipant {
   id: string
   displayName: string
+  role?: string
+  avatarUrl?: string
 }
 
 export interface ConversationSummary {
