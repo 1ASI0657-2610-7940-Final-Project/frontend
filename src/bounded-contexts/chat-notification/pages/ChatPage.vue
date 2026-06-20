@@ -122,7 +122,6 @@ onBeforeRouteLeave(() => {
             </div>
             <div class="user-info">
               <strong class="user-name">{{ activeName }}</strong>
-              <span class="user-sub">{{ activeMeta.role }} &bull; {{ activeMeta.online ? 'Online' : 'Offline' }}</span>
             </div>
           </div>
 
@@ -160,8 +159,8 @@ onBeforeRouteLeave(() => {
 .chat-layout { 
   display: grid; 
   grid-template-columns: 320px minmax(0, 1fr); 
-  height: 80dvh; 
-  max-height: 80dvh;
+  height: 90dvh; 
+  max-height: 90dvh;
   width: 100%;
   min-height: 0;
   background: #ffffff; 
@@ -249,11 +248,6 @@ onBeforeRouteLeave(() => {
   font-weight: 700;
   color: #0f172a;
   line-height: 1.2;
-}
-.user-sub {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 0.1rem;
 }
 
 /* Options dropdown */
