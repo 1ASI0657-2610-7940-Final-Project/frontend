@@ -113,7 +113,19 @@ watch(
 </template>
 
 <style scoped>
-.thread { display: flex; flex-direction: column; gap: 0.85rem; padding: 1.5rem; overflow-y: auto; min-height: 0; height: 100%; background: #ffffff; }
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  min-height: 0;
+  height: auto;
+  flex: 1 1 auto;
+  background: #ffffff;
+}
 .date-divider { display: flex; justify-content: center; margin: 1rem 0; }
 .date-pill { background: #f1f5f9; color: #64748b; font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 9999px; border: 1px solid #e2e8f0; }
 </style>

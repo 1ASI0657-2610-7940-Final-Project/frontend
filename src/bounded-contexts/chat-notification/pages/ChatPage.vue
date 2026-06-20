@@ -140,11 +140,15 @@ onBeforeRouteLeave(() => {
           </div>
         </header>
 
-        <!-- Message List Thread -->
-        <MessageThread ref="threadRef" :messages="chatStore.messages" :auth-user-id="authStore.user?.id" />
+        <div class="chat-body">
+          <!-- Message List Thread -->
+          <div class="thread-shell">
+            <MessageThread ref="threadRef" :messages="chatStore.messages" :auth-user-id="authStore.user?.id" />
+          </div>
 
-        <!-- Composer -->
-        <MessageComposer @send="send" />
+          <!-- Composer -->
+          <MessageComposer @send="send" />
+        </div>
       </template>
     </div>
 
@@ -156,7 +160,6 @@ onBeforeRouteLeave(() => {
 .chat-layout { 
   display: grid; 
   grid-template-columns: 320px 1fr; 
-  grid-template-rows: 100%;
   height: 100%; 
   min-height: 0;
   max-height: 100%;
@@ -165,12 +168,25 @@ onBeforeRouteLeave(() => {
   overflow: hidden;
 }
 .main {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   height: 100%;
   max-height: 100%;
   overflow: hidden;
+}
+.chat-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+.thread-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
 }
 
 /* Thread Header */
