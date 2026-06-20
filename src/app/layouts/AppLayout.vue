@@ -277,7 +277,9 @@ const logout = () => {
   max-width: 100%;
   margin: 0;
   padding: 0;
-  height: calc(100vh - 68px);
+  height: calc(100dvh - 68px);
+  max-height: calc(100dvh - 68px);
+  min-height: 0;
   overflow: hidden;
 }
 

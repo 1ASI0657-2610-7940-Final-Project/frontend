@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { useRoute } from 'vue-router'
 import ConversationList from '../components/ConversationList.vue'
@@ -19,6 +19,7 @@ const route = useRoute()
 const reportOpen = ref(false)
 const showMenu = ref(false)
 const threadRef = ref<InstanceType<typeof MessageThread> | null>(null)
+const chatShellRef = ref<HTMLElement | null>(null)
 
 const selectedId = computed(() => chatStore.selectedConversation?.id)
 const selectedParticipant = computed(() => chatStore.conversations.find((c) => c.id === selectedId.value)?.participants?.[0]?.id || '')
@@ -31,17 +32,23 @@ const activeMeta = computed(() => {
   return getParticipantMeta(activeName.value)
 })
 
+let resizeObserver: ResizeObserver | null = null
+let visualViewportResizeHandler: (() => void) | null = null
+
+const scrollThreadToBottom = async () => {
+  await nextTick()
+  threadRef.value?.scrollToBottom('auto')
+}
+
 const selectConversation = async (id: string) => {
   await chatStore.selectConversation(id)
-  await nextTick()
-  threadRef.value?.scrollToBottom()
+  await scrollThreadToBottom()
 }
 
 const send = async (content: string) => {
   if (!chatStore.selectedConversation) return
   await chatStore.sendMessage(chatStore.selectedConversation.id, { content })
-  await nextTick()
-  threadRef.value?.scrollToBottom()
+  await scrollThreadToBottom()
 }
 
 const reportUser = () => {
@@ -54,9 +61,40 @@ onMounted(async () => {
   const queryConversationId = typeof route.query.conversationId === 'string' ? route.query.conversationId : ''
   if (queryConversationId) {
     await selectConversation(queryConversationId)
-    return
+  } else if (chatStore.conversations[0]) {
+    await selectConversation(chatStore.conversations[0].id)
+  } else {
+    await scrollThreadToBottom()
   }
-  if (chatStore.conversations[0]) await selectConversation(chatStore.conversations[0].id)
+
+  resizeObserver = new ResizeObserver(() => {
+    void scrollThreadToBottom()
+  })
+
+  if (chatShellRef.value) {
+    resizeObserver.observe(chatShellRef.value)
+  }
+
+  if (window.visualViewport) {
+    visualViewportResizeHandler = () => {
+      void scrollThreadToBottom()
+    }
+    window.visualViewport.addEventListener('resize', visualViewportResizeHandler)
+  } else {
+    window.addEventListener('resize', scrollThreadToBottom)
+  }
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+
+  if (window.visualViewport && visualViewportResizeHandler) {
+    window.visualViewport.removeEventListener('resize', visualViewportResizeHandler)
+    visualViewportResizeHandler = null
+  } else {
+    window.removeEventListener('resize', scrollThreadToBottom)
+  }
 })
 
 onBeforeRouteLeave(() => {
@@ -65,7 +103,7 @@ onBeforeRouteLeave(() => {
 </script>
 
 <template>
-  <section class="chat-layout">
+  <section ref="chatShellRef" class="chat-layout">
     <ConversationList :conversations="chatStore.conversations" :selected-id="selectedId" @select="selectConversation" />
 
     <div class="main">
@@ -118,11 +156,22 @@ onBeforeRouteLeave(() => {
 .chat-layout { 
   display: grid; 
   grid-template-columns: 320px 1fr; 
+  grid-template-rows: 100%;
   height: 100%; 
+  min-height: 0;
+  max-height: 100%;
   background: #ffffff; 
   box-sizing: border-box;
+  overflow: hidden;
 }
-.main { display: grid; grid-template-rows: auto 1fr auto; min-height: 0; height: 100%; }
+.main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
 
 /* Thread Header */
 .thread-head { 
@@ -236,4 +285,15 @@ onBeforeRouteLeave(() => {
 }
 
 @media (max-width: 980px) { .chat-layout { grid-template-columns: 1fr; } }
+
+@media (max-width: 980px) {
+  .chat-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(180px, 38dvh) minmax(0, 1fr);
+  }
+
+  .main {
+    min-height: 0;
+  }
+}
 </style>

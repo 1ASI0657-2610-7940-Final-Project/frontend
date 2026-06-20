@@ -7,12 +7,6 @@ const props = defineProps<{ messages: ChatMessage[]; authUserId?: string }>()
 const threadEl = ref<HTMLElement | null>(null)
 const sortedMessages = computed(() => [...props.messages].sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()))
 
-const isNearBottom = () => {
-  const el = threadEl.value
-  if (!el) return true
-  return el.scrollHeight - el.scrollTop - el.clientHeight < 80
-}
-
 const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
   const el = threadEl.value
   if (!el) return
@@ -94,9 +88,8 @@ const threadItems = computed(() => {
 watch(
   () => sortedMessages.value.map((m) => `${m.id}:${m.sentAt}`).join('|'),
   async () => {
-    const shouldStick = isNearBottom()
     await nextTick()
-    if (shouldStick) scrollToBottom('auto')
+    scrollToBottom('auto')
   },
   { flush: 'post' }
 )
@@ -111,9 +104,9 @@ watch(
       <MessageBubble 
         v-else-if="item.type === 'message' && item.message" 
         :message="item.message" 
-        :own="item.own !!" 
-        :show-avatar="item.showAvatar !!" 
-        :show-timestamp="item.showTimestamp !!" 
+        :own="!!item.own" 
+        :show-avatar="!!item.showAvatar" 
+        :show-timestamp="!!item.showTimestamp" 
       />
     </template>
   </div>
