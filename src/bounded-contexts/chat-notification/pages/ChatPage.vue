@@ -159,10 +159,11 @@ onBeforeRouteLeave(() => {
 <style scoped>
 .chat-layout { 
   display: grid; 
-  grid-template-columns: 320px 1fr; 
-  height: 100%; 
+  grid-template-columns: 320px minmax(0, 1fr); 
+  height: 80dvh; 
+  max-height: 80dvh;
+  width: 100%;
   min-height: 0;
-  max-height: 100%;
   background: #ffffff; 
   box-sizing: border-box;
   overflow: hidden;
@@ -171,8 +172,6 @@ onBeforeRouteLeave(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
-  max-height: 100%;
   overflow: hidden;
 }
 .chat-body {
@@ -187,6 +186,7 @@ onBeforeRouteLeave(() => {
   min-height: 0;
   overflow: hidden;
   display: flex;
+  align-items: stretch;
 }
 
 /* Thread Header */
@@ -194,6 +194,7 @@ onBeforeRouteLeave(() => {
   display: flex; 
   justify-content: space-between; 
   align-items: center; 
+  flex-shrink: 0;
   border-bottom: 1px solid #e2e8f0; 
   padding: 0.85rem 1.25rem; 
   background: #ffffff; 
@@ -305,7 +306,7 @@ onBeforeRouteLeave(() => {
 @media (max-width: 980px) {
   .chat-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(180px, 38dvh) minmax(0, 1fr);
+    grid-template-rows: minmax(180px, 34dvh) minmax(0, 1fr);
   }
 
   .main {

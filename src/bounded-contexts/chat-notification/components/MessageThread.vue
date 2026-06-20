@@ -122,8 +122,8 @@ watch(
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   min-height: 0;
-  height: auto;
   flex: 1 1 auto;
+  align-self: stretch;
   background: #ffffff;
 }
 .date-divider { display: flex; justify-content: center; margin: 1rem 0; }

@@ -48,6 +48,7 @@ const submit = () => {
   border-top: 1px solid #e2e8f0;
   background: #ffffff;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .attach-btn {

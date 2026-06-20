@@ -127,6 +127,8 @@ const filteredConversations = computed(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -136,6 +138,7 @@ const filteredConversations = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .title {
@@ -168,6 +171,7 @@ const filteredConversations = computed(() => {
   position: relative;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .search-icon {
@@ -197,6 +201,7 @@ const filteredConversations = computed(() => {
 /* List Items */
 .list-items {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
