@@ -8,6 +8,23 @@ defineEmits<{ select: [id: string] }>()
 
 const searchQuery = ref('')
 
+const formatConversationCode = (value?: string) => {
+  const raw = value?.trim()
+  if (!raw) return ''
+  if (/^PRJ-\d+$/i.test(raw)) return raw.toUpperCase()
+  const uuidLike = raw.replace(/-/g, '')
+  if (/^[a-f0-9]{32}$/i.test(uuidLike)) {
+    return uuidLike.slice(0, 8)
+  }
+  return raw.length > 12 ? raw.slice(0, 8) : raw
+}
+
+const formatConversationTitle = (conversation: ConversationSummary) => {
+  const name = conversation.participants[0]?.displayName || 'Conversation'
+  const code = formatConversationCode(conversation.projectId || conversation.id)
+  return code ? `${name} - ${code}` : name
+}
+
 const formatMsgTime = (sentAt: string) => {
   const d = new Date(sentAt)
   if (isNaN(d.getTime())) {
@@ -103,7 +120,7 @@ const filteredConversations = computed(() => {
         <!-- Right: Text details -->
         <div class="details">
           <div class="row-top">
-            <strong class="name">{{ conversation.participants[0]?.displayName || 'Conversation' }}</strong>
+            <strong class="name">{{ formatConversationTitle(conversation) }}</strong>
             <span class="time">{{ formatMsgTime(conversation.lastMessageAt) }}</span>
           </div>
           <div class="row-bottom">

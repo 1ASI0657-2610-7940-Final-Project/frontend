@@ -32,6 +32,22 @@ const activeMeta = computed(() => {
   return getParticipantMeta(activeName.value)
 })
 
+const activeConversationCode = computed(() => {
+  const raw = chatStore.selectedConversation?.projectId || selectedId.value || ''
+  const trimmed = raw.trim()
+  if (!trimmed) return ''
+  if (/^PRJ-\d+$/i.test(trimmed)) return trimmed.toUpperCase()
+  const uuidLike = trimmed.replace(/-/g, '')
+  if (/^[a-f0-9]{32}$/i.test(uuidLike)) {
+    return uuidLike.slice(0, 8)
+  }
+  return trimmed.length > 12 ? trimmed.slice(0, 8) : trimmed
+})
+
+const activeHeaderTitle = computed(() => {
+  return activeConversationCode.value ? `${activeName.value} - ${activeConversationCode.value}` : activeName.value
+})
+
 let resizeObserver: ResizeObserver | null = null
 let visualViewportResizeHandler: (() => void) | null = null
 
@@ -121,7 +137,7 @@ onBeforeRouteLeave(() => {
               <span class="status-dot" :class="{ online: activeMeta.online }"></span>
             </div>
             <div class="user-info">
-              <strong class="user-name">{{ activeName }}</strong>
+              <strong class="user-name">{{ activeHeaderTitle }}</strong>
             </div>
           </div>
 
@@ -159,8 +175,8 @@ onBeforeRouteLeave(() => {
 .chat-layout { 
   display: grid; 
   grid-template-columns: 320px minmax(0, 1fr); 
-  height: 90dvh; 
-  max-height: 90dvh;
+  height: 95dvh; 
+  max-height: 95dvh;
   width: 100%;
   min-height: 0;
   background: #ffffff; 

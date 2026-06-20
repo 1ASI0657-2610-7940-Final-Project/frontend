@@ -9,6 +9,7 @@ export interface ConversationSummary {
   lastMessageAt: string
   unreadCount: number
   participants: ConversationParticipant[]
+  projectId?: string
 }
 
 export interface ConversationDetail {
