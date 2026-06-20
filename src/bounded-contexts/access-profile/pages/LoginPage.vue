@@ -3,7 +3,6 @@ import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../../app/stores/authStore'
 import type { ErrorResponse } from '@shared/types/common.types'
-import giguLogo from '@shared/assets/brand/GigU_Typo.png'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -31,7 +30,9 @@ const submit = async () => {
     await router.push('/marketplace')
   } catch (error) {
     const mapped = error as ErrorResponse
-    generalError.value = mapped.status === 401 ? 'Invalid email or password' : mapped.message
+    generalError.value = mapped.status === 401 
+      ? 'The password you entered is incorrect. Please try again or reset your password.' 
+      : mapped.message
     fieldErrors.value = mapped.fields ?? {}
   }
 }
@@ -41,35 +42,60 @@ const submit = async () => {
   <section class="login-wrap">
     <div class="login-card">
       <header>
-        <img class="brand" :src="giguLogo" alt="GigU" />
+        <div class="brand">GigU</div>
         <h2>Welcome back</h2>
         <p class="muted">Please enter your credentials to access your account.</p>
       </header>
 
       <form class="form" @submit.prevent="submit">
-        <label>
-          <span>Email</span>
-          <input v-model="form.email" type="email" placeholder="name@university.edu" />
-          <small v-if="fieldErrors.email" class="error">{{ fieldErrors.email }}</small>
+        <label class="form-label">
+          <span class="field-title">Email</span>
+          <input 
+            v-model="form.email" 
+            type="email" 
+            placeholder="name@university.edu" 
+            class="input-field"
+            :class="{ 'error-border': fieldErrors.email }"
+          />
+          <small v-if="fieldErrors.email" class="error-msg">{{ fieldErrors.email }}</small>
         </label>
 
-        <label>
+        <label class="form-label">
           <div class="password-row">
-            <span>Password</span>
+            <span class="field-title">Password</span>
             <button type="button" class="forgot">Forgot password?</button>
           </div>
-          <input v-model="form.password" type="password" placeholder="Enter your password" />
-          <small v-if="fieldErrors.password" class="error">{{ fieldErrors.password }}</small>
+          <input 
+            v-model="form.password" 
+            type="password" 
+            placeholder="Enter your password" 
+            class="input-field"
+            :class="{ 'error-border': generalError || fieldErrors.password }"
+          />
         </label>
 
-        <p v-if="generalError" class="error">{{ generalError }}</p>
+        <!-- Red validation error message under the password field matching the screenshot -->
+        <div v-if="generalError || fieldErrors.password" class="error-container">
+          <div class="error-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <span class="error-text">
+            {{ generalError || fieldErrors.password }}
+          </span>
+        </div>
 
-        <button class="primary" :disabled="!canSubmit">{{ auth.loading ? 'Signing in...' : 'Sign In' }}</button>
+        <button class="primary" :disabled="!canSubmit">
+          {{ auth.loading ? 'Signing in...' : 'Sign In' }}
+        </button>
       </form>
 
+      <div class="divider"></div>
+
       <footer>
-        <p>Don't have an account? <RouterLink to="/register">Register</RouterLink></p>
-        <RouterLink to="/marketplace">Browse marketplace</RouterLink>
+        <p class="footer-text">
+          Don't have an account? 
+          <RouterLink to="/register" class="register-link">Register</RouterLink>
+        </p>
       </footer>
     </div>
   </section>
@@ -80,43 +106,64 @@ const submit = async () => {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 1.25rem;
+  padding: 1.5rem;
+  background: #f8faff; /* Soft purplish-blue background matching the screenshot */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
 }
 
 .login-card {
-  width: min(480px, 100%);
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 2.25rem 2rem;
+  width: min(440px, 100%);
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  padding: 3.5rem 2.75rem;
+  box-sizing: border-box;
 }
 
 header {
   text-align: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 2rem;
 }
 
-.brand { width: auto; height: 54px; margin-bottom: 0.25rem; }
+.brand {
+  font-size: 2.75rem;
+  font-weight: 800;
+  color: #0b57d0; /* Rich blue color matching GigU logo in screenshot */
+  letter-spacing: -0.03em;
+  margin-bottom: 0.25rem;
+}
 
 h2 {
-  font-size: 2rem;
-  margin-bottom: 0.375rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0.5rem 0 0.25rem 0;
+  letter-spacing: -0.02em;
 }
 
 .muted {
-  color: var(--color-text-muted);
-  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+  margin: 0.25rem 0 0 0;
+  line-height: 1.5;
 }
 
 .form {
   display: grid;
-  gap: 0.95rem;
+  gap: 1.25rem;
 }
 
-label {
+.form-label {
   display: grid;
   gap: 0.35rem;
+}
+
+.field-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
 }
 
 .password-row {
@@ -125,71 +172,126 @@ label {
   justify-content: space-between;
 }
 
-span {
-  font-family: var(--font-label);
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
 .forgot {
   border: none;
   background: transparent;
-  color: var(--color-primary);
-  font-weight: 600;
+  color: #0b57d0;
+  font-weight: 700;
+  font-size: 0.825rem;
   cursor: pointer;
   padding: 0;
 }
-
-input {
-  width: 100%;
-  border: 1px solid #bfc8db;
-  border-radius: 10px;
-  padding: 0.75rem 0.85rem;
-  outline: none;
+.forgot:hover {
+  text-decoration: underline;
 }
 
-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.14);
+.input-field {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.75rem 0.85rem;
+  outline: none;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #0f172a;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  border-color: #0b57d0;
+  box-shadow: 0 0 0 2px rgba(11, 87, 208, 0.1);
+}
+
+.input-field.error-border {
+  border-color: #ef4444; /* Red border on input error */
+}
+
+.input-field.error-border:focus {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+/* Red validation error message under the password field matching screenshot */
+.error-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: #dc2626;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-top: -0.25rem;
+}
+.error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #dc2626;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+.error-icon svg {
+  width: 10px;
+  height: 10px;
+  stroke: #ffffff;
+  fill: #dc2626;
+}
+.error-text {
+  font-weight: 500;
+}
+
+.error-msg {
+  color: #dc2626;
+  font-size: 0.825rem;
+  margin-top: 0.15rem;
 }
 
 .primary {
-  margin-top: 0.25rem;
+  width: 100%;
   border: none;
-  border-radius: 10px;
-  padding: 0.78rem 0.9rem;
-  background: var(--color-primary);
-  color: var(--color-white);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background: #0b57d0; /* Royal blue matching the screenshot button */
+  color: #ffffff;
   font-weight: 700;
+  font-size: 0.95rem;
   cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 0.25rem;
+}
+
+.primary:hover:not(:disabled) {
+  background: #094cb4;
 }
 
 .primary:disabled {
-  opacity: 0.65;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.error {
-  color: var(--color-error);
+.divider {
+  height: 1px;
+  background: #cbd5e1;
+  margin: 1.75rem 0;
+}
+
+.footer-text {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #64748b;
   margin: 0;
 }
 
-footer {
-  margin-top: 1.25rem;
-  border-top: 1px solid var(--color-border);
-  padding-top: 1rem;
-  display: grid;
-  justify-items: center;
-  gap: 0.4rem;
-  color: var(--color-text-muted);
+.register-link {
+  color: #0b57d0;
+  font-weight: 700;
+  text-decoration: none;
 }
 
-footer p {
-  margin: 0;
-}
-
-footer a {
-  color: var(--color-primary);
-  font-weight: 600;
+.register-link:hover {
+  text-decoration: underline;
 }
 </style>

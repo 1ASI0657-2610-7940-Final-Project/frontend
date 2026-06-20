@@ -3,7 +3,6 @@ import { authGuard } from './guards'
 import AppLayout from '../layouts/AppLayout.vue'
 import AuthLayout from '../layouts/AuthLayout.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
-import PlaceholderPage from '../../pages/PlaceholderPage.vue'
 import ForbiddenPage from '../../pages/ForbiddenPage.vue'
 import NotFoundPage from '../../pages/NotFoundPage.vue'
 import { useAuthStore } from '../stores/authStore'
@@ -23,6 +22,7 @@ import ClientDashboardPage from '../pages/dashboard/ClientDashboardPage.vue'
 import FreelancerDashboardPage from '../pages/dashboard/FreelancerDashboardPage.vue'
 import LoginPage from '@access/pages/LoginPage.vue'
 import RegisterPage from '@access/pages/RegisterPage.vue'
+import FreelancerProfilePage from '@access/pages/FreelancerProfilePage.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -30,8 +30,6 @@ declare module 'vue-router' {
     roles?: ('CLIENT' | 'FREELANCER')[]
   }
 }
-
-const makePlaceholder = (title: string, subtitle: string) => ({ component: PlaceholderPage, props: { title, subtitle } })
 
 const router = createRouter({
   history: createWebHistory(),
@@ -62,9 +60,8 @@ const router = createRouter({
         { path: 'client/requests', component: ClientRequestsPage, meta: { requiresAuth: true, roles: ['CLIENT'] } },
         { path: 'freelancer/dashboard', component: FreelancerDashboardPage, meta: { requiresAuth: true, roles: ['FREELANCER'] } },
         { path: 'freelancer/gigs', component: MyGigsPage, meta: { requiresAuth: true, roles: ['FREELANCER'] } },
-        { path: 'freelancer/gigs/new', component: CreateGigPage, meta: { requiresAuth: true, roles: ['FREELANCER'] } },
         { path: 'freelancer/gigs/:id/edit', component: EditGigPage, meta: { requiresAuth: true, roles: ['FREELANCER'] } },
-        { path: 'freelancer/profile', ...makePlaceholder('Edit Profile', 'Manage professional identity and portfolio.'), meta: { requiresAuth: true, roles: ['FREELANCER'] } },
+        { path: 'freelancer/profile', component: FreelancerProfilePage, meta: { requiresAuth: true, roles: ['FREELANCER'] } },
         { path: 'freelancer/requests', component: IncomingRequestsPage, meta: { requiresAuth: true, roles: ['FREELANCER'] } },
         { path: 'projects', component: ProjectsPage, meta: { requiresAuth: true } },
         { path: 'projects/:id', component: ProjectDetailPage, meta: { requiresAuth: true } },
@@ -72,6 +69,11 @@ const router = createRouter({
         { path: 'notifications', component: NotificationsPage, meta: { requiresAuth: true } },
         { path: 'support', component: SupportTicketPage, meta: { requiresAuth: true } }
       ]
+    },
+    {
+      path: '/freelancer/gigs/new',
+      component: CreateGigPage,
+      meta: { requiresAuth: true, roles: ['FREELANCER'] }
     },
     { path: '/not-found', component: NotFoundPage },
     { path: '/:pathMatch(.*)*', redirect: '/not-found' }

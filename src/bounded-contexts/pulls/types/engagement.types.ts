@@ -17,6 +17,8 @@ export interface ProjectRequest {
   freelancerId: string
   proposedPrice: number
   currency: string
+  proposedDeliveryDays?: number
+  message?: string
   status: RequestStatus
   createdAt: string
 }

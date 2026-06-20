@@ -11,15 +11,25 @@ import ErrorState from '../../../shared/components/ErrorState.vue'
 import ReportUserModal from '@chat/components/ReportUserModal.vue'
 import { useChatStore } from '@chat/stores/chatStore'
 import { useAuthStore } from '../../../app/stores/authStore'
+import { getParticipantMeta } from '@chat/utils/chatHelpers'
 
 const chatStore = useChatStore()
 const authStore = useAuthStore()
 const route = useRoute()
 const reportOpen = ref(false)
+const showMenu = ref(false)
 const threadRef = ref<InstanceType<typeof MessageThread> | null>(null)
 
 const selectedId = computed(() => chatStore.selectedConversation?.id)
 const selectedParticipant = computed(() => chatStore.conversations.find((c) => c.id === selectedId.value)?.participants?.[0]?.id || '')
+
+const activeName = computed(() => {
+  return chatStore.conversations.find((c) => c.id === selectedId.value)?.participants?.[0]?.displayName || 'Conversation'
+})
+
+const activeMeta = computed(() => {
+  return getParticipantMeta(activeName.value)
+})
 
 const selectConversation = async (id: string) => {
   await chatStore.selectConversation(id)
@@ -32,6 +42,11 @@ const send = async (content: string) => {
   await chatStore.sendMessage(chatStore.selectedConversation.id, { content })
   await nextTick()
   threadRef.value?.scrollToBottom()
+}
+
+const reportUser = () => {
+  showMenu.value = false
+  reportOpen.value = true
 }
 
 onMounted(async () => {
@@ -50,7 +65,7 @@ onBeforeRouteLeave(() => {
 </script>
 
 <template>
-  <section class="chat-layout card">
+  <section class="chat-layout">
     <ConversationList :conversations="chatStore.conversations" :selected-id="selectedId" @select="selectConversation" />
 
     <div class="main">
@@ -59,13 +74,38 @@ onBeforeRouteLeave(() => {
       <EmptyState v-else-if="!chatStore.selectedConversation" title="No conversation selected" message="Choose a conversation from the left panel." />
 
       <template v-else>
+        <!-- Header -->
         <header class="thread-head">
-          <strong>{{ chatStore.conversations.find((c) => c.id === selectedId)?.participants?.[0]?.displayName || 'Conversation' }}</strong>
+          <div class="user-details">
+            <div class="avatar-container">
+              <img v-if="activeMeta.avatar" :src="activeMeta.avatar" class="head-avatar" alt="Avatar" />
+              <div v-else class="head-avatar placeholder">{{ activeMeta.initials }}</div>
+              <span class="status-dot" :class="{ online: activeMeta.online }"></span>
+            </div>
+            <div class="user-info">
+              <strong class="user-name">{{ activeName }}</strong>
+              <span class="user-sub">{{ activeMeta.role }} &bull; {{ activeMeta.online ? 'Online' : 'Offline' }}</span>
+            </div>
+          </div>
+
           <div class="head-tools">
-            <button @click="reportOpen = true">Report User</button>
+            <div class="menu-container">
+              <button class="options-btn" @click="showMenu = !showMenu" aria-label="More options">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                </svg>
+              </button>
+              <div v-if="showMenu" class="dropdown-menu card">
+                <button @click="reportUser" class="menu-item">Report User</button>
+              </div>
+            </div>
           </div>
         </header>
+
+        <!-- Message List Thread -->
         <MessageThread ref="threadRef" :messages="chatStore.messages" :auth-user-id="authStore.user?.id" />
+
+        <!-- Composer -->
         <MessageComposer @send="send" />
       </template>
     </div>
@@ -75,10 +115,125 @@ onBeforeRouteLeave(() => {
 </template>
 
 <style scoped>
-.chat-layout { display: grid; grid-template-columns: 320px 1fr; min-height: 78vh; overflow: hidden; }
-.main { display: grid; grid-template-rows: auto 1fr auto; min-height: 0; }
-.thread-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border); padding: 0.85rem 1rem; background: #fff; }
-.head-tools { display: flex; gap: 0.45rem; align-items: center; }
-.thread-head button { border: 1px solid var(--color-border); border-radius: 8px; background: #fff; padding: 0.35rem 0.6rem; }
+.chat-layout { 
+  display: grid; 
+  grid-template-columns: 320px 1fr; 
+  height: 100%; 
+  background: #ffffff; 
+  box-sizing: border-box;
+}
+.main { display: grid; grid-template-rows: auto 1fr auto; min-height: 0; height: 100%; }
+
+/* Thread Header */
+.thread-head { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  border-bottom: 1px solid #e2e8f0; 
+  padding: 0.85rem 1.25rem; 
+  background: #ffffff; 
+}
+.user-details {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar-container {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+.head-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.head-avatar.placeholder {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.status-dot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  border: 1.5px solid #ffffff;
+}
+.status-dot.online {
+  background: #22c55e;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+.user-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+.user-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.1rem;
+}
+
+/* Options dropdown */
+.head-tools { display: flex; align-items: center; }
+.menu-container { position: relative; }
+.options-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+.options-btn:hover {
+  background: #f1f5f9;
+}
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 5px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  padding: 0.25rem;
+  z-index: 10;
+  width: 130px;
+}
+.menu-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: #b42318;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.menu-item:hover {
+  background: #fef2f2;
+}
+
 @media (max-width: 980px) { .chat-layout { grid-template-columns: 1fr; } }
 </style>
