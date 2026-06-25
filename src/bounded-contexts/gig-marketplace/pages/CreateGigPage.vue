@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarketplaceStore } from '@marketplace/stores/marketplaceStore'
 import { normalizeError } from '../../../shared/utils/errorMapper'
 import Toast from '../../../shared/components/Toast.vue'
+import TagChipsInput from '../components/TagChipsInput.vue'
 import PriceCalculatorPanel from '../components/PriceCalculatorPanel.vue'
 
 const router = useRouter()
@@ -20,7 +21,6 @@ const basePrice = ref<number | undefined>(undefined)
 const currency = ref('USD')
 const deliveryDays = ref(3)
 const description = ref('')
-const tagInputValue = ref('')
 const tagsList = ref<string[]>([])
 
 // Portfolio media list for user-selected files
@@ -34,19 +34,6 @@ interface PortfolioItem {
 const portfolioItems = ref<PortfolioItem[]>([])
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
-
-// Tags management
-const addTag = () => {
-  const cleanVal = tagInputValue.value.trim().replace(/,/g, '')
-  if (cleanVal && !tagsList.value.includes(cleanVal)) {
-    tagsList.value.push(cleanVal)
-  }
-  tagInputValue.value = ''
-}
-
-const removeTag = (tag: string) => {
-  tagsList.value = tagsList.value.filter((t) => t !== tag)
-}
 
 // Portfolio images management
 const triggerFileInput = () => {
@@ -117,6 +104,10 @@ const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
 const goBack = () => {
   router.push('/freelancer/gigs')
 }
+
+const selectedCategoryName = computed(
+  () => store.categories.find((category) => category.id === categoryId.value)?.name || ''
+)
 
 // Publish Gig execution flow
 const publishGig = async (statusOverride = 'PUBLISHED') => {
@@ -247,23 +238,11 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="field-label">Search Tags</label>
-                <input 
-                  v-model="tagInputValue" 
-                  type="text" 
-                  placeholder="Press enter to add tags (e.g., logo, branding)" 
-                  class="input-field" 
-                  @keydown.enter.prevent="addTag"
-                />
-                <!-- Tags pill list -->
-                <div class="tags-list-container" v-if="tagsList.length">
-                  <span v-for="tag in tagsList" :key="tag" class="tag-pill">
-                    {{ tag }}
-                    <button class="remove-tag-btn" @click="removeTag(tag)" aria-label="Remove tag">&times;</button>
-                  </span>
-                </div>
-              </div>
+              <TagChipsInput
+                label="Search Tags"
+                v-model="tagsList"
+                placeholder="Press enter to add tags (e.g., logo, branding)"
+              />
             </div>
           </div>
         </section>
@@ -317,7 +296,12 @@ onMounted(async () => {
           </div>
         </section>
 
-        <PriceCalculatorPanel :base-price="basePrice" :delivery-days="deliveryDays" :currency="currency" />
+        <PriceCalculatorPanel
+          :base-price="basePrice"
+          :currency="currency"
+          :category-name="selectedCategoryName"
+          @apply-price="(value) => (basePrice = value)"
+        />
 
         <!-- CARD 3: DETAILED DESCRIPTION -->
         <section class="form-card card">
@@ -330,19 +314,7 @@ onMounted(async () => {
               <label class="field-label">About this Gig</label>
               <p class="field-sub">Provide a comprehensive description of what you offer, your process, and what the buyer will receive.</p>
               
-              <!-- Editor Container -->
               <div class="editor-container">
-                <div class="editor-toolbar">
-                  <button type="button" class="toolbar-btn" title="Bold"><strong>B</strong></button>
-                  <button type="button" class="toolbar-btn" title="Italic"><em>I</em></button>
-                  <button type="button" class="toolbar-btn" title="Bullet List">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                  </button>
-                  <span class="toolbar-divider"></span>
-                  <button type="button" class="toolbar-btn" title="Add Link">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                  </button>
-                </div>
                 <textarea 
                   v-model="description" 
                   rows="8" 
@@ -769,37 +741,6 @@ onMounted(async () => {
 .editor-container:focus-within {
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-}
-.editor-toolbar {
-  display: flex;
-  align-items: center;
-  background: #f8fafc;
-  border-bottom: 1px solid #cbd5e1;
-  padding: 0.5rem;
-  gap: 0.25rem;
-}
-.toolbar-btn {
-  background: none;
-  border: none;
-  border-radius: 4px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.toolbar-btn:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-.toolbar-divider {
-  width: 1px;
-  height: 16px;
-  background: #cbd5e1;
-  margin: 0 0.25rem;
 }
 .editor-textarea {
   width: 100%;

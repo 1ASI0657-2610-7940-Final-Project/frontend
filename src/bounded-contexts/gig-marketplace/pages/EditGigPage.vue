@@ -20,6 +20,9 @@ const busy = ref(false)
 const success = ref('')
 const mediaStatusType = ref<'idle' | 'success' | 'error'>('idle')
 const mediaStatusMessage = ref('')
+const selectedCategoryName = computed(
+  () => store.categories.find((category) => category.id === form.value.categoryId)?.name || ''
+)
 
 const hydrate = async () => {
   await Promise.all([store.fetchCategories(), store.fetchServiceById(serviceId.value)])
@@ -107,7 +110,12 @@ onMounted(hydrate)
     </header>
     <ErrorState v-if="store.error" :message="store.error" />
     <GigForm v-model="form" :categories="store.categories" submit-label="Save Changes" :busy="busy" @submit="submit" />
-    <PriceCalculatorPanel :base-price="form.basePrice" :delivery-days="form.deliveryDays" :currency="form.currency" />
+    <PriceCalculatorPanel
+      :base-price="form.basePrice"
+      :currency="form.currency"
+      :category-name="selectedCategoryName"
+      @apply-price="(value) => (form.basePrice = value)"
+    />
     <GigMediaManager :media="media" :busy="busy" :status-type="mediaStatusType" :status-message="mediaStatusMessage" @upload="uploadMedia" @delete="removeMedia" />
   </section>
 </template>
