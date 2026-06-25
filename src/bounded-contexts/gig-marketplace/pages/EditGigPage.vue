@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import GigForm from '../components/GigForm.vue'
 import GigMediaManager from '../components/GigMediaManager.vue'
+import PriceCalculatorPanel from '../components/PriceCalculatorPanel.vue'
 import Toast from '../../../shared/components/Toast.vue'
 import ErrorState from '../../../shared/components/ErrorState.vue'
 import type { ServiceMedia, UpdateServicePayload } from '@marketplace/types/marketplace.types'
@@ -16,6 +17,9 @@ const form = ref<Partial<UpdateServicePayload>>({})
 const media = ref<ServiceMedia[]>([])
 const busy = ref(false)
 const success = ref('')
+const selectedCategoryName = computed(
+  () => store.categories.find((category) => category.id === form.value.categoryId)?.name || ''
+)
 
 const hydrate = async () => {
   await Promise.all([store.fetchCategories(), store.fetchServiceById(serviceId.value)])
@@ -76,6 +80,12 @@ onMounted(hydrate)
     <Toast v-if="success" :message="success" type="success" />
     <ErrorState v-if="store.error" :message="store.error" />
     <GigForm v-model="form" :categories="store.categories" submit-label="Save Changes" :busy="busy" @submit="submit" />
+    <PriceCalculatorPanel
+      :base-price="form.basePrice"
+      :currency="form.currency"
+      :category-name="selectedCategoryName"
+      @apply-price="(value) => (form.basePrice = value)"
+    />
     <GigMediaManager :media="media" :busy="busy" @upload="uploadMedia" @delete="removeMedia" />
   </section>
 </template>

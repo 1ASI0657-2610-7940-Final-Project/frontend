@@ -52,7 +52,7 @@ export const marketplaceApi = {
     const response = await http.get<ServicesListResponse>(apiClients.marketplace, '/services', { params: filters })
     return {
       ...response,
-      data: Array.isArray(response.data) ? response.data.map((item) => normalizeListItem(item as unknown as Record<string, unknown>)) : []
+      data: Array.isArray(response.data) ? response.data.map((item: unknown) => normalizeListItem(item as Record<string, unknown>)) : []
     }
   },
   getServiceById: async (id: string) => {

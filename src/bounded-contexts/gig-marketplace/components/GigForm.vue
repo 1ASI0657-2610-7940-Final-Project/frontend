@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import type { Category, CreateServicePayload, UpdateServicePayload } from '@marketplace/types/marketplace.types'
+import TagChipsInput from './TagChipsInput.vue'
 
 const props = defineProps<{ modelValue: Partial<CreateServicePayload & UpdateServicePayload>; categories: Category[]; submitLabel: string; busy?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: Partial<CreateServicePayload & UpdateServicePayload>]; submit: [] }>()
 
 const update = (key: keyof (CreateServicePayload & UpdateServicePayload), value: unknown) => {
   emit('update:modelValue', { ...props.modelValue, [key]: value })
-}
-
-const tagInput = (value: string) => {
-  const tags = value.split(',').map((item) => item.trim()).filter(Boolean)
-  update('tags', tags)
 }
 </script>
 
@@ -48,10 +44,12 @@ const tagInput = (value: string) => {
       <span>Description</span>
       <textarea rows="6" :value="modelValue.description || ''" @input="update('description', ($event.target as HTMLTextAreaElement).value)" required />
     </label>
-    <label>
-      <span>Tags</span>
-      <input :value="(modelValue.tags || []).join(', ')" @input="tagInput(($event.target as HTMLInputElement).value)" placeholder="Vue, Landing Page, Responsive" />
-    </label>
+    <TagChipsInput
+      label="Search Tags"
+      :model-value="modelValue.tags || []"
+      placeholder="Press enter to add tags (e.g., logo, branding)"
+      @update:modelValue="update('tags', $event)"
+    />
     <button class="submit" :disabled="busy">{{ busy ? 'Saving...' : submitLabel }}</button>
   </form>
 </template>

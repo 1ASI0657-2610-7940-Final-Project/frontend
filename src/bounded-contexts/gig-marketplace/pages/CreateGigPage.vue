@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import GigForm from '../components/GigForm.vue'
 import GigMediaManager from '../components/GigMediaManager.vue'
+import PriceCalculatorPanel from '../components/PriceCalculatorPanel.vue'
 import Toast from '../../../shared/components/Toast.vue'
-import PriceSuggestionPanel from '@pulls/components/PriceSuggestionPanel.vue'
 import type { CreateServicePayload, ServiceMedia } from '@marketplace/types/marketplace.types'
 import { useMarketplaceStore } from '@marketplace/stores/marketplaceStore'
 
@@ -16,6 +16,9 @@ const serviceId = ref<string | null>(null)
 const media = ref<ServiceMedia[]>([])
 const busy = ref(false)
 const message = ref('')
+const selectedCategoryName = computed(
+  () => store.categories.find((category) => category.id === form.value.categoryId)?.name || ''
+)
 
 const submit = async () => {
   busy.value = true
@@ -65,7 +68,12 @@ onMounted(async () => {
     <p class="muted">Define your service, set your terms, and showcase your expertise to potential clients.</p>
     <Toast v-if="message" :message="message" type="success" />
     <GigForm v-model="form" :categories="store.categories" submit-label="Create Gig" :busy="busy" @submit="submit" />
-    <PriceSuggestionPanel @apply="(value) => (form.basePrice = value)" />
+    <PriceCalculatorPanel
+      :base-price="form.basePrice"
+      :currency="form.currency"
+      :category-name="selectedCategoryName"
+      @apply-price="(value) => (form.basePrice = value)"
+    />
     <GigMediaManager :media="media" :busy="busy" @upload="uploadMedia" @delete="deleteMedia" />
     <div class="actions">
       <button class="secondary" @click="finish">Done</button>
