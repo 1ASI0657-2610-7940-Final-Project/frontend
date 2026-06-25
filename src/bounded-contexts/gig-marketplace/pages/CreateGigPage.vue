@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useMarketplaceStore } from '@marketplace/stores/marketplaceStore'
 import { normalizeError } from '../../../shared/utils/errorMapper'
 import Toast from '../../../shared/components/Toast.vue'
+import PriceCalculatorPanel from '../components/PriceCalculatorPanel.vue'
 
 const router = useRouter()
 const store = useMarketplaceStore()
@@ -20,31 +21,17 @@ const currency = ref('USD')
 const deliveryDays = ref(3)
 const description = ref('')
 const tagInputValue = ref('')
-const tagsList = ref<string[]>(['UI Design', 'Web App'])
+const tagsList = ref<string[]>([])
 
-// Portfolio media list (includes mock images and user-added files)
+// Portfolio media list for user-selected files
 interface PortfolioItem {
   id: string
   url: string
   file?: File
-  isMock: boolean
   primary: boolean
 }
 
-const portfolioItems = ref<PortfolioItem[]>([
-  {
-    id: 'mock-1',
-    url: '/mock-portfolio/laptop.png',
-    isMock: true,
-    primary: true
-  },
-  {
-    id: 'mock-2',
-    url: '/mock-portfolio/chart.png',
-    isMock: false,
-    primary: false
-  }
-])
+const portfolioItems = ref<PortfolioItem[]>([])
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
@@ -93,7 +80,6 @@ const addFiles = (files: File[]) => {
       id: Math.random().toString(36).substr(2, 9),
       url,
       file,
-      isMock: false,
       primary: portfolioItems.value.length === 0
     })
   }
@@ -118,13 +104,6 @@ const setAsPrimary = (id: string) => {
   portfolioItems.value.forEach((i) => {
     i.primary = i.id === id
   })
-}
-
-// Helper to convert mock images to Files for backend upload
-const getMockFile = async (url: string, filename: string): Promise<File> => {
-  const res = await fetch(url)
-  const blob = await res.blob()
-  return new File([blob], filename, { type: blob.type })
 }
 
 const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -167,18 +146,7 @@ const publishGig = async (statusOverride = 'PUBLISHED') => {
     // 2. Upload images one by one
     for (const item of portfolioItems.value) {
       let fileToUpload: File | undefined = item.file
-      
-      // If it's the mock template image, fetch and convert it to a file
-      if (item.isMock || (!item.file && item.url.startsWith('/mock-portfolio'))) {
-        try {
-          const filename = item.url.split('/').pop() || 'portfolio.png'
-          fileToUpload = await getMockFile(item.url, filename)
-        } catch (e) {
-          console.warn('Failed to upload template image:', item.url, e)
-          continue
-        }
-      }
-      
+
       if (fileToUpload) {
         const formData = new FormData()
         formData.append('file', fileToUpload)
@@ -348,6 +316,8 @@ onMounted(async () => {
             </div>
           </div>
         </section>
+
+        <PriceCalculatorPanel :base-price="basePrice" :delivery-days="deliveryDays" :currency="currency" />
 
         <!-- CARD 3: DETAILED DESCRIPTION -->
         <section class="form-card card">

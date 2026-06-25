@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import GigForm from '../components/GigForm.vue'
 import GigMediaManager from '../components/GigMediaManager.vue'
+import PriceCalculatorPanel from '../components/PriceCalculatorPanel.vue'
 import Toast from '../../../shared/components/Toast.vue'
 import ErrorState from '../../../shared/components/ErrorState.vue'
 import type { ServiceMedia, UpdateServicePayload } from '@marketplace/types/marketplace.types'
@@ -42,6 +43,7 @@ const submit = async () => {
     await store.updateService(serviceId.value, form.value)
     success.value = 'Gig updated successfully.'
   } catch (e) {
+    success.value = ''
     mediaStatusType.value = 'error'
     mediaStatusMessage.value = normalizeError(e).message
   } finally {
@@ -96,15 +98,22 @@ onMounted(hydrate)
 
 <template>
   <section class="edit-page">
-    <h1 class="page-title">Edit Gig</h1>
-    <p class="muted">Update your service details and assets.</p>
-    <Toast v-if="success" :message="success" type="success" />
+    <header class="page-head card">
+      <div>
+        <h1 class="page-title">Edit Gig</h1>
+        <p class="muted">Update your service details and assets.</p>
+      </div>
+      <Toast v-if="success" :message="success" type="success" />
+    </header>
     <ErrorState v-if="store.error" :message="store.error" />
     <GigForm v-model="form" :categories="store.categories" submit-label="Save Changes" :busy="busy" @submit="submit" />
+    <PriceCalculatorPanel :base-price="form.basePrice" :delivery-days="form.deliveryDays" :currency="form.currency" />
     <GigMediaManager :media="media" :busy="busy" :status-type="mediaStatusType" :status-message="mediaStatusMessage" @upload="uploadMedia" @delete="removeMedia" />
   </section>
 </template>
 
 <style scoped>
 .edit-page { display: grid; gap: 0.9rem; max-width: 980px; }
+.page-head { padding: 1.1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.page-title { margin: 0; font-size: 1.6rem; color: #0f172a; }
 </style>
