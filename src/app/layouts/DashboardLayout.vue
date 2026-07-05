@@ -1,11 +1,28 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
+import { useNotificationStore } from '@chat/stores/notificationStore'
 
 const auth = useAuthStore()
+const notifications = useNotificationStore()
 const router = useRouter()
 const sidebarOpen = ref(false)
+
+const unreadCount = computed(() => notifications.unreadCount)
+
+onMounted(() => {
+  // Conecta el WebSocket de notificaciones en toda la zona autenticada (dashboard, chat,
+  // requests, etc.) para que las notificaciones en tiempo real —incluida NEW_MESSAGE cuando
+  // un cliente te escribe— aparezcan sin recargar. Antes solo se conectaba en el AppLayout
+  // (marketplace), por lo que dentro del dashboard/chat nunca llegaban en vivo.
+  notifications.connectRealtime()
+  notifications.fetchUnreadNotifications().catch(() => {})
+})
+
+onBeforeUnmount(() => {
+  notifications.disconnectRealtime()
+})
 
 const isFreelancer = computed(() => auth.user?.role === 'FREELANCER')
 
@@ -88,6 +105,7 @@ const logout = () => {
           <!-- Help icon -->
           <svg v-else xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span>{{ item.label }}</span>
+          <span v-if="item.to === '/notifications' && unreadCount > 0" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
         </RouterLink>
       </nav>
 
@@ -133,6 +151,8 @@ const logout = () => {
 .nav-item:hover { background: #f4f6fb; color: #0f172a; }
 .nav-item.router-link-active { background: var(--color-primary); color: #fff; }
 .nav-item svg { flex-shrink: 0; }
+.nav-badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+.nav-item.router-link-active .nav-badge { background: #fff; color: var(--color-primary); }
 
 /* Footer */
 .sidebar-footer { display: flex; flex-direction: column; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid #e5e9f2; margin-top: 0.75rem; }

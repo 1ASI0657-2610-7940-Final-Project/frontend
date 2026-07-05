@@ -1,19 +1,100 @@
 <script setup lang="ts">
-const stats = [
+import { computed, onMounted } from 'vue'
+import { useEngagementStore } from '@pulls/stores/engagementStore'
+import type { Project } from '@pulls/types/engagement.types'
+
+const store = useEngagementStore()
+
+// Estados que cuentan como proyecto "en curso" para el cliente.
+const ACTIVE_STATUSES = ['PENDING', 'IN_PROGRESS', 'DELIVERED']
+
+// Datos de respaldo: se muestran solo si el backend aún no devuelve información
+// (usuario nuevo o servicio no disponible), replicando el patrón de ProjectsPage.
+const mockStats = [
   { label: 'ACTIVE REQUESTS', value: '4', sub: '↑ 2 since last week', subColor: '#22c55e', icon: 'inbox' },
   { label: 'ONGOING PROJECTS', value: '3', sub: 'All on schedule', subColor: '#64748b', icon: 'folder' },
   { label: 'SPENT (MTD)', value: '$1.2k', sub: '↑ 8% vs last month', subColor: '#22c55e', icon: 'wallet' },
 ]
-
-const activeProjects = [
+const mockActiveProjects = [
   { title: 'Brand Identity Package', subtitle: 'Logo + style guide', initials: 'LM', freelancer: 'Laura Méndez', dueDate: 'Nov 5, 2023', status: 'In Progress', statusColor: '#3b5bdb', statusBg: '#eef2ff' },
   { title: 'SEO Content Strategy', subtitle: 'Blog articles x10', initials: 'JP', freelancer: 'James Park', dueDate: 'Nov 12, 2023', status: 'In Review', statusColor: '#6366f1', statusBg: '#eef2ff' },
 ]
-
-const recentlyCompleted = [
+const mockRecentlyCompleted = [
   { title: 'Landing Page Design', freelancer: 'Sofia Torres', completedDate: 'Oct 20, 2023' },
   { title: 'Social Media Kit', freelancer: 'Carlos Díaz', completedDate: 'Oct 14, 2023' },
 ]
+
+const hasRealData = computed(() => store.projects.length > 0 || store.outgoingRequests.length > 0)
+
+const shortId = (id: string) => (id ? id.slice(0, 8) : '')
+const initialsOf = (id: string) => (id ? id.replace(/-/g, '').slice(0, 2).toUpperCase() : '--')
+
+const statusView = (status: string) => {
+  switch (status) {
+    case 'IN_PROGRESS': return { label: 'In Progress', color: '#3b5bdb', bg: '#eef2ff' }
+    case 'DELIVERED': return { label: 'In Review', color: '#6366f1', bg: '#eef2ff' }
+    case 'PENDING': return { label: 'Pending', color: '#d97706', bg: '#fef3c7' }
+    default: return { label: status, color: '#64748b', bg: '#f1f5f9' }
+  }
+}
+
+const completedDateOf = (p: Project) => {
+  const h = p.statusHistory?.find((x) => x.status === 'FINISHED')
+  return h ? new Date(h.changedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'
+}
+
+const formatMoney = (amount: number, currency: string) => {
+  const symbol = currency === 'USD' ? '$' : (currency ? currency + ' ' : '$')
+  return symbol + amount.toLocaleString('en-US', { maximumFractionDigits: 0 })
+}
+
+const activeProjects = computed(() => {
+  if (!hasRealData.value) return mockActiveProjects
+  return store.projects
+    .filter((p) => ACTIVE_STATUSES.includes(p.status))
+    .map((p) => {
+      const s = statusView(p.status)
+      return {
+        title: p.serviceId || 'Freelance Service',
+        subtitle: `#${shortId(p.id)}`,
+        initials: initialsOf(p.freelancerId),
+        freelancer: p.freelancerId,
+        dueDate: '—',
+        status: s.label,
+        statusColor: s.color,
+        statusBg: s.bg,
+      }
+    })
+})
+
+const recentlyCompleted = computed(() => {
+  if (!hasRealData.value) return mockRecentlyCompleted
+  return store.projects
+    .filter((p) => p.status === 'FINISHED')
+    .map((p) => ({
+      title: p.serviceId || 'Freelance Service',
+      freelancer: p.freelancerId,
+      completedDate: completedDateOf(p),
+    }))
+})
+
+const stats = computed(() => {
+  if (!hasRealData.value) return mockStats
+  const activeRequests = store.outgoingRequests.filter((r) => r.status === 'PENDING').length
+  const ongoing = store.projects.filter((p) => ACTIVE_STATUSES.includes(p.status)).length
+  const finished = store.projects.filter((p) => p.status === 'FINISHED')
+  const spent = finished.reduce((sum, p) => sum + (p.finalPrice || 0), 0)
+  const currency = finished[0]?.currency || 'USD'
+  return [
+    { label: 'ACTIVE REQUESTS', value: String(activeRequests), sub: 'Awaiting response', subColor: '#64748b', icon: 'inbox' },
+    { label: 'ONGOING PROJECTS', value: String(ongoing), sub: 'In progress', subColor: '#64748b', icon: 'folder' },
+    { label: 'TOTAL SPENT', value: formatMoney(spent, currency), sub: 'Completed projects', subColor: '#64748b', icon: 'wallet' },
+  ]
+})
+
+onMounted(() => {
+  Promise.allSettled([store.fetchProjects(), store.fetchOutgoingRequests()])
+})
 </script>
 
 <template>
@@ -61,7 +142,7 @@ const recentlyCompleted = [
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in activeProjects" :key="p.title">
+            <tr v-for="(p, i) in activeProjects" :key="i">
               <td>
                 <div class="project-title">{{ p.title }}</div>
                 <div class="project-sub muted">{{ p.subtitle }}</div>
@@ -112,7 +193,7 @@ const recentlyCompleted = [
           </tr>
         </thead>
         <tbody>
-          <tr v-for="p in recentlyCompleted" :key="p.title">
+          <tr v-for="(p, i) in recentlyCompleted" :key="i">
             <td><div class="project-title">{{ p.title }}</div></td>
             <td class="muted">{{ p.freelancer }}</td>
             <td class="date-cell muted">{{ p.completedDate }}</td>

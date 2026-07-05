@@ -1,37 +1,94 @@
 <script setup lang="ts">
-const stats = [
-  {
-    label: 'PENDING REQUESTS',
-    value: '12',
-    sub: '↑ 3 since last week',
-    subColor: '#22c55e',
-    icon: 'hourglass',
-  },
-  {
-    label: 'ACTIVE PROJECTS',
-    value: '5',
-    sub: 'All tracking on schedule',
-    subColor: '#64748b',
-    icon: 'team',
-  },
-  {
-    label: 'COMPLETED (MTD)',
-    value: '8',
-    sub: '↑ 12% volume increase',
-    subColor: '#22c55e',
-    icon: 'check',
-  },
-]
+import { computed, onMounted } from 'vue'
+import { useEngagementStore } from '@pulls/stores/engagementStore'
+import type { Project } from '@pulls/types/engagement.types'
 
-const activeProjects = [
+const store = useEngagementStore()
+
+// Estados que cuentan como proyecto "en curso" para el freelancer.
+const ACTIVE_STATUSES = ['PENDING', 'IN_PROGRESS', 'DELIVERED']
+
+// Datos de respaldo: se muestran solo si el backend aún no devuelve información
+// (freelancer nuevo o servicio no disponible), replicando el patrón de ProjectsPage.
+const mockStats = [
+  { label: 'PENDING REQUESTS', value: '12', sub: '↑ 3 since last week', subColor: '#22c55e', icon: 'hourglass' },
+  { label: 'ACTIVE PROJECTS', value: '5', sub: 'All tracking on schedule', subColor: '#64748b', icon: 'team' },
+  { label: 'COMPLETED (MTD)', value: '8', sub: '↑ 12% volume increase', subColor: '#22c55e', icon: 'check' },
+]
+const mockActiveProjects = [
   { title: 'UI Design System Update', subtitle: 'Milestone 2 Delivery', initials: 'AR', freelancer: 'Alex Rivera', dueDate: 'Oct 24, 2023', status: 'In Progress', statusColor: '#3b5bdb', statusBg: '#eef2ff' },
   { title: 'Backend API Integration', subtitle: 'Stripe Webhooks', initials: 'SJ', freelancer: 'Sarah Jenkins', dueDate: 'Oct 26, 2023', status: 'In Review', statusColor: '#6366f1', statusBg: '#eef2ff' },
 ]
-
-const recentlyCompleted = [
+const mockRecentlyCompleted = [
   { title: 'Marketing Copywriting', subtitle: '', freelancer: 'David Kim', completedDate: 'Oct 18, 2023' },
   { title: 'Logo Redesign Concept', subtitle: '', freelancer: 'Elena Rossi', completedDate: 'Oct 15, 2023' },
 ]
+
+const hasRealData = computed(() => store.projects.length > 0 || store.incomingRequests.length > 0)
+
+const shortId = (id: string) => (id ? id.slice(0, 8) : '')
+const initialsOf = (id: string) => (id ? id.replace(/-/g, '').slice(0, 2).toUpperCase() : '--')
+
+const statusView = (status: string) => {
+  switch (status) {
+    case 'IN_PROGRESS': return { label: 'In Progress', color: '#3b5bdb', bg: '#eef2ff' }
+    case 'DELIVERED': return { label: 'In Review', color: '#6366f1', bg: '#eef2ff' }
+    case 'PENDING': return { label: 'Pending', color: '#d97706', bg: '#fef3c7' }
+    default: return { label: status, color: '#64748b', bg: '#f1f5f9' }
+  }
+}
+
+const completedDateOf = (p: Project) => {
+  const h = p.statusHistory?.find((x) => x.status === 'FINISHED')
+  return h ? new Date(h.changedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'
+}
+
+const activeProjects = computed(() => {
+  if (!hasRealData.value) return mockActiveProjects
+  return store.projects
+    .filter((p) => ACTIVE_STATUSES.includes(p.status))
+    .map((p) => {
+      const s = statusView(p.status)
+      return {
+        title: p.serviceId || 'Freelance Service',
+        subtitle: `#${shortId(p.id)}`,
+        initials: initialsOf(p.clientId),
+        freelancer: p.clientId,
+        dueDate: '—',
+        status: s.label,
+        statusColor: s.color,
+        statusBg: s.bg,
+      }
+    })
+})
+
+const recentlyCompleted = computed(() => {
+  if (!hasRealData.value) return mockRecentlyCompleted
+  return store.projects
+    .filter((p) => p.status === 'FINISHED')
+    .map((p) => ({
+      title: p.serviceId || 'Freelance Service',
+      subtitle: '',
+      freelancer: p.clientId,
+      completedDate: completedDateOf(p),
+    }))
+})
+
+const stats = computed(() => {
+  if (!hasRealData.value) return mockStats
+  const pending = store.incomingRequests.filter((r) => r.status === 'PENDING').length
+  const active = store.projects.filter((p) => ACTIVE_STATUSES.includes(p.status)).length
+  const completed = store.projects.filter((p) => p.status === 'FINISHED').length
+  return [
+    { label: 'PENDING REQUESTS', value: String(pending), sub: 'Awaiting your decision', subColor: '#64748b', icon: 'hourglass' },
+    { label: 'ACTIVE PROJECTS', value: String(active), sub: 'In progress', subColor: '#64748b', icon: 'team' },
+    { label: 'COMPLETED', value: String(completed), sub: 'Finished projects', subColor: '#64748b', icon: 'check' },
+  ]
+})
+
+onMounted(() => {
+  Promise.allSettled([store.fetchProjects(), store.fetchIncomingRequests()])
+})
 </script>
 
 <template>
@@ -85,7 +142,7 @@ const recentlyCompleted = [
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in activeProjects" :key="p.title">
+            <tr v-for="(p, i) in activeProjects" :key="i">
               <td>
                 <div class="project-title">{{ p.title }}</div>
                 <div class="project-sub muted">{{ p.subtitle }}</div>
@@ -138,7 +195,7 @@ const recentlyCompleted = [
           </tr>
         </thead>
         <tbody>
-          <tr v-for="p in recentlyCompleted" :key="p.title">
+          <tr v-for="(p, i) in recentlyCompleted" :key="i">
             <td>
               <div class="project-title">{{ p.title }}</div>
             </td>
