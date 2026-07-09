@@ -37,7 +37,7 @@ const revieweeId = computed(() => {
   return isClient.value ? project.value.freelancerId : project.value.clientId
 })
 
-const canMarkDelivered = computed(() => isFreelancer.value && project.value?.status === 'IN_PROGRESS')
+const canMarkDelivered = computed(() => isFreelancer.value && ['PENDING', 'IN_PROGRESS'].includes(project.value?.status ?? ''))
 const canMarkCompleted = computed(() => isClient.value && project.value?.status === 'DELIVERED')
 const messageButtonLabel = computed(() => (isClient.value ? 'Message Freelancer' : 'Message Client'))
 const statusActionLabel = computed(() => (canMarkCompleted.value ? 'Mark Completed' : 'Mark Delivered'))
