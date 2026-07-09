@@ -20,8 +20,8 @@ const projectId = computed(() => route.params.id as string)
 
 const project = computed(() => store.selectedProject)
 const shortId = (value: string) => (value ? value.slice(0, 8).toUpperCase() : '--')
-const isClient = computed(() => auth.user?.role === 'CLIENT')
-const isFreelancer = computed(() => auth.user?.role === 'FREELANCER')
+const isClient = computed(() => auth.isClient)
+const isFreelancer = computed(() => auth.isFreelancer)
 
 // Deliverables Checklist state (interactive)
 const checklist = ref([
@@ -34,7 +34,7 @@ const checklist = ref([
 const revieweeId = computed(() => {
   if (!project.value) return ''
   if (!auth.user) return project.value.freelancerId || project.value.clientId || ''
-  return auth.user.role === 'CLIENT' ? project.value.freelancerId : project.value.clientId
+  return isClient.value ? project.value.freelancerId : project.value.clientId
 })
 
 const canMarkDelivered = computed(() => isFreelancer.value && project.value?.status === 'IN_PROGRESS')
