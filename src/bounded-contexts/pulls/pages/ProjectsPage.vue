@@ -117,14 +117,16 @@ const formatPrice = (price: number, currency: string) => {
 
 const getStatusClass = (status: string) => {
   if (status === 'IN_PROGRESS' || status === 'PENDING') return 'active'
-  if (status === 'FINISHED' || status === 'DELIVERED') return 'completed'
+  if (status === 'DELIVERED') return 'delivered'
+  if (status === 'FINISHED') return 'completed'
   if (status === 'CANCELLED') return 'cancelled'
   return 'active'
 }
 
 const getStatusLabel = (status: string) => {
   if (status === 'IN_PROGRESS' || status === 'PENDING') return 'Active'
-  if (status === 'FINISHED' || status === 'DELIVERED') return 'Completed'
+  if (status === 'DELIVERED') return 'Delivered'
+  if (status === 'FINISHED') return 'Completed'
   if (status === 'CANCELLED') return 'Cancelled'
   return status
 }
@@ -258,6 +260,9 @@ onMounted(async () => {
                 <span class="status-pill" :class="getStatusClass(project.status)">
                   <!-- Status Dot or Check or X depending on state -->
                   <span v-if="getStatusClass(project.status) === 'active'" class="status-dot"></span>
+                  <svg v-else-if="getStatusClass(project.status) === 'delivered'" class="status-check" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
                   <svg v-else-if="getStatusClass(project.status) === 'completed'" class="status-check" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
@@ -595,8 +600,13 @@ onMounted(async () => {
   color: #15803d;
 }
 
+.status-pill.delivered {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 .status-check {
-  color: #16a34a;
+  color: currentColor;
   stroke-width: 3;
 }
 

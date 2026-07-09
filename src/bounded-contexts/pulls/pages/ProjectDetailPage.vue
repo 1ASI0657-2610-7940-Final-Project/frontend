@@ -177,7 +177,15 @@ onMounted(load)
               <h2 class="card-title">Project Brief</h2>
               <span class="status-pill" :class="project.status.toLowerCase()">
                 <span class="status-dot"></span>
-                {{ project.status === 'IN_PROGRESS' ? 'IN PROGRESS' : project.status }}
+                {{
+                  project.status === 'IN_PROGRESS'
+                    ? 'IN PROGRESS'
+                    : project.status === 'DELIVERED'
+                      ? 'DELIVERED'
+                      : project.status === 'FINISHED'
+                        ? 'COMPLETED'
+                        : project.status
+                }}
               </span>
             </header>
 
@@ -504,11 +512,23 @@ onMounted(load)
   background: #eff6ff;
   color: #1d4ed8;
 }
+.status-pill.pending {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.status-pill.delivered {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.status-pill.finished {
+  background: #f0fdf4;
+  color: #15803d;
+}
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #2563eb;
+  background: currentColor;
 }
 .description-text {
   font-size: 0.95rem;
