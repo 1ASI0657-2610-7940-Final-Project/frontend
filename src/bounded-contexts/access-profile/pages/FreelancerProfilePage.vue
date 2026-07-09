@@ -2,33 +2,23 @@
 import { ref } from 'vue'
 import { accessApi } from '@access/api/accessApi'
 import { normalizeError } from '../../../shared/utils/errorMapper'
-import enterpriseMock from '@shared/assets/enterprise_analytics_mockup.png'
-import predictiveMock from '@shared/assets/predictive_sales_mockup.png'
 
 // State variables
-const fullName = ref('Alexander Wright')
-const headline = ref('Senior UX/UI Designer & Webflow Expert')
-const bio = ref(
-  'I am a passionate product designer with over 5 years of experience building enterprise-grade applications. I specialize in bridging the gap between complex business requirements and intuitive, accessible user interfaces. My approach is heavily rooted in design systems and fixed-grid philosophies, ensuring scalability and consistency across high-trust corporate environments.'
-)
-const skills = ref(['UI Design', 'Design systems', 'Figma', 'Tailwind CSS'])
-const availability = ref(true)
-const hourlyRate = ref(65)
+const fullName = ref('')
+const headline = ref('')
+const bio = ref('')
+const skills = ref<string[]>([])
+const availability = ref(false)
+const hourlyRate = ref<number | null>(null)
 
-const portfolio = ref([
-  {
-    id: 'p1',
-    title: 'Enterprise Analytics Dashboard',
-    description: 'Complete redesign of the core reporting module, improving data readability and loading speed.',
-    coverImage: enterpriseMock
-  },
-  {
-    id: 'p2',
-    title: 'Predictive Sales Tool',
-    description: 'A conceptual application focusing on clean typography and bento-grid layouts to show complex forecast trends.',
-    coverImage: predictiveMock
-  }
-])
+const portfolio = ref<
+  Array<{
+    id: string
+    title: string
+    description: string
+    coverImage: string | null
+  }>
+>([])
 
 // Input states
 const newSkill = ref('')
@@ -115,7 +105,7 @@ const addPortfolioItem = async () => {
       id: 'p-new-' + Date.now(),
       title: newTitle.value.trim(),
       description: newDescription.value.trim() || 'No description provided.',
-      coverImage: simulatedImage.value || enterpriseMock
+      coverImage: simulatedImage.value
     }
 
     // Attempt backend submit
@@ -197,7 +187,12 @@ const previewProfile = () => {
             <!-- Portrait picture -->
             <div class="avatar-edit">
               <div class="avatar-wrapper">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" alt="Avatar" class="avatar-img" />
+                <div class="avatar-placeholder" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21a8 8 0 0 0-16 0" />
+                    <circle cx="12" cy="8" r="4" />
+                  </svg>
+                </div>
               </div>
               <span class="avatar-hint">JPG or PNG. Max 2MB.</span>
             </div>
@@ -382,9 +377,20 @@ const previewProfile = () => {
 
       <!-- Portfolio Grid Items -->
       <div class="portfolio-grid">
+        <div v-if="portfolio.length === 0" class="portfolio-empty">
+          <h3 class="portfolio-empty-title">No portfolio items yet.</h3>
+          <p class="portfolio-empty-desc">Add your first real project to start showcasing your work.</p>
+        </div>
         <article v-for="item in portfolio" :key="item.id" class="portfolio-card card">
           <div class="portfolio-cover">
-            <img :src="item.coverImage" :alt="item.title" class="cover-img" />
+            <img v-if="item.coverImage" :src="item.coverImage" :alt="item.title" class="cover-img" />
+            <div v-else class="cover-placeholder">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5L5 21" />
+              </svg>
+            </div>
           </div>
           <div class="portfolio-info">
             <h3 class="portfolio-title">{{ item.title }}</h3>
@@ -542,10 +548,13 @@ const previewProfile = () => {
   overflow: hidden;
   border: 3px solid #e2e8f0;
 }
-.avatar-wrapper .avatar-img {
+.avatar-placeholder {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
 }
 .avatar-hint {
   font-size: 0.6875rem;
@@ -881,6 +890,24 @@ const previewProfile = () => {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
 }
+.portfolio-empty {
+  grid-column: 1 / -1;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 2rem;
+  background: #f8fafc;
+  text-align: center;
+}
+.portfolio-empty-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.portfolio-empty-desc {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
 .portfolio-card {
   overflow: hidden;
   display: flex;
@@ -898,12 +925,23 @@ const previewProfile = () => {
   overflow: hidden;
   background: #f1f5f9;
   border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s;
+}
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
 }
 .portfolio-card:hover .cover-img {
   transform: scale(1.03);

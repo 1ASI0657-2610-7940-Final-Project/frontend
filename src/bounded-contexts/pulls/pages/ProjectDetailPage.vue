@@ -3,11 +3,12 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../../app/stores/authStore'
 import { useEngagementStore } from '@pulls/stores/engagementStore'
-import type { Project, ProjectStatus } from '@pulls/types/engagement.types'
+import type { ProjectStatus } from '@pulls/types/engagement.types'
 import ReportUserModal from '@chat/components/ReportUserModal.vue'
 import { chatApi } from '@chat/api/chatApi'
 import LoadingState from '../../../shared/components/LoadingState.vue'
 import ErrorState from '../../../shared/components/ErrorState.vue'
+import EmptyState from '../../../shared/components/EmptyState.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,9 +17,9 @@ const store = useEngagementStore()
 const openReportModal = ref(false)
 
 const projectId = computed(() => route.params.id as string)
-const mockSelectedProject = ref<Project | null>(null)
 
-const project = computed(() => store.selectedProject || mockSelectedProject.value)
+const project = computed(() => store.selectedProject)
+const shortId = (value: string) => (value ? value.slice(0, 8).toUpperCase() : '--')
 
 // Deliverables Checklist state (interactive)
 const checklist = ref([
@@ -28,60 +29,9 @@ const checklist = ref([
   { id: '4', label: 'Interactive Figma Prototype', completed: false }
 ])
 
-const getMockProject = (id: string) => {
-  const mocks = [
-    {
-      id: 'PRJ-2024-089',
-      title: 'E-Commerce Mobile App UI Design',
-      name: 'Nova Retail Inc.',
-      role: 'Client',
-      status: 'IN_PROGRESS',
-      finalPrice: 1200,
-      currency: 'USD'
-    },
-    {
-      id: 'PRJ-2023-8901',
-      title: 'Web App Development',
-      name: 'TechFlow Inc.',
-      role: 'Client',
-      status: 'IN_PROGRESS',
-      finalPrice: 4500,
-      currency: 'USD'
-    },
-    {
-      id: 'PRJ-2023-7742',
-      title: 'Brand Identity Design',
-      name: 'Sarah Jenkins',
-      role: 'Freelancer',
-      status: 'FINISHED',
-      finalPrice: 1200,
-      currency: 'USD'
-    },
-    {
-      id: 'PRJ-2023-6510',
-      title: 'Technical Translation',
-      name: 'Global Reach Ltd.',
-      role: 'Client',
-      status: 'CANCELLED',
-      finalPrice: 350,
-      currency: 'USD'
-    },
-    {
-      id: 'PRJ-2023-9022',
-      title: 'Social Media Campaign',
-      name: 'Elevate Marketing',
-      role: 'Client',
-      status: 'IN_PROGRESS',
-      finalPrice: 850,
-      currency: 'USD'
-    }
-  ]
-  return mocks.find((m) => m.id === id)
-}
-
 const revieweeId = computed(() => {
   if (!project.value) return ''
-  if (!auth.user) return project.value.freelancerId || 'Freelancer_User_456'
+  if (!auth.user) return project.value.freelancerId || project.value.clientId || ''
   return auth.user.role === 'CLIENT' ? project.value.freelancerId : project.value.clientId
 })
 
@@ -100,73 +50,14 @@ const load = async () => {
     console.warn('fetchProjectReviews failed:', err)
   }
 
-  // Clear any store error that might have been set during wrapping of the failed actions
   store.error = null
-
-  if (!store.selectedProject) {
-    const pId = projectId.value
-    const foundMock = getMockProject(pId)
-    if (foundMock) {
-      const history = [
-        { status: 'PENDING' as ProjectStatus, changedAt: '2024-10-03T09:41:00Z' },
-        { status: 'IN_PROGRESS' as ProjectStatus, changedAt: '2024-10-05T14:20:00Z' }
-      ]
-      if (foundMock.status === 'FINISHED') {
-        history.push({ status: 'DELIVERED' as ProjectStatus, changedAt: '2024-10-20T09:00:00Z' })
-        history.push({ status: 'FINISHED' as ProjectStatus, changedAt: '2024-10-21T11:15:00Z' })
-      } else if (foundMock.status === 'CANCELLED') {
-        history.push({ status: 'CANCELLED' as ProjectStatus, changedAt: '2024-10-18T16:00:00Z' })
-      }
-
-      mockSelectedProject.value = {
-        id: foundMock.id,
-        serviceId: foundMock.title,
-        clientId: foundMock.role === 'Client' ? foundMock.name : 'Client_User_123',
-        freelancerId: foundMock.role === 'Freelancer' ? foundMock.name : 'Freelancer_User_456',
-        status: foundMock.status as ProjectStatus,
-        finalPrice: foundMock.finalPrice,
-        currency: foundMock.currency,
-        statusHistory: history
-      }
-    } else {
-      // Fallback default mock for '1' or other unknown ids
-      mockSelectedProject.value = {
-        id: 'PRJ-2024-089',
-        serviceId: 'E-Commerce Mobile App UI Design',
-        clientId: 'Nova Retail Inc.',
-        freelancerId: 'Freelancer_User_456',
-        status: 'IN_PROGRESS' as ProjectStatus,
-        finalPrice: 1200,
-        currency: 'USD',
-        statusHistory: [
-          { status: 'PENDING' as ProjectStatus, changedAt: '2024-10-03T09:41:00Z' },
-          { status: 'IN_PROGRESS' as ProjectStatus, changedAt: '2024-10-05T14:20:00Z' }
-        ]
-      }
-    }
-  }
 }
 
 const markDelivered = async () => {
   if (!project.value) return
   try {
-    if (project.value.id.startsWith('PRJ-') || project.value.id === '1') {
-      // Local Mock Update
-      if (mockSelectedProject.value) {
-        mockSelectedProject.value.status = 'DELIVERED'
-        const exists = mockSelectedProject.value.statusHistory?.some((h) => h.status === 'DELIVERED')
-        if (!exists && mockSelectedProject.value.statusHistory) {
-          mockSelectedProject.value.statusHistory.push({
-            status: 'DELIVERED',
-            changedAt: new Date().toISOString()
-          })
-        }
-      }
-    } else {
-      // Real backend Update
-      await store.updateProjectStatus(projectId.value, { status: 'DELIVERED' })
-      await load()
-    }
+    await store.updateProjectStatus(projectId.value, { status: 'DELIVERED' })
+    await load()
   } catch (e) {
     console.error('Failed to update project status:', e)
   }
@@ -216,7 +107,13 @@ onMounted(load)
     <ErrorState v-if="store.error" :message="store.error" />
     <LoadingState v-else-if="store.loading" />
 
-    <template v-else-if="project">
+    <EmptyState
+      v-else-if="!project"
+      title="No project found"
+      message="This project has no real record yet."
+    />
+
+    <template v-else>
       <!-- Breadcrumbs & Header -->
       <header class="page-header">
         <div class="header-left">
@@ -266,14 +163,11 @@ onMounted(load)
 
             <div class="brief-body">
               <p class="description-text">
-                We are looking for a clean, modern UI design for our upcoming e-commerce mobile application targeting Gen-Z consumers. The design needs to be highly engaging, utilizing large imagery, bold typography, and intuitive navigation patterns.
+                No additional project brief is available from the backend for this engagement.
               </p>
               <h3 class="deliverables-title">Key deliverables include:</h3>
               <ul class="deliverables-list">
-                <li>Home screen with dynamic product feeds</li>
-                <li>Product Detail Page (PDP)</li>
-                <li>Shopping Cart and Checkout flow (3 screens)</li>
-                <li>User Profile and Order History</li>
+                <li>No deliverables were provided for this project.</li>
               </ul>
             </div>
 
@@ -284,15 +178,15 @@ onMounted(load)
               </div>
               <div class="metric-item">
                 <span class="metric-label">Timeline</span>
-                <span class="metric-value">3 Weeks</span>
+                <span class="metric-value">Not set</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Deadline</span>
-                <span class="metric-value">Oct 24, 2024</span>
+                <span class="metric-value">Not set</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Agreement ID</span>
-                <span class="metric-value">AGR-9921</span>
+                <span class="metric-value">{{ shortId(project.id) }}</span>
               </div>
             </div>
           </article>
@@ -378,7 +272,7 @@ onMounted(load)
             <span class="client-card-label">CLIENT INFORMATION</span>
             
             <div class="client-profile">
-              <div class="client-logo">N</div>
+              <div class="client-logo">{{ shortId(project.clientId).slice(0, 2) }}</div>
               <div class="client-meta">
                 <h3 class="client-name">{{ project.clientId }}</h3>
                 <span class="client-verified">
@@ -386,7 +280,7 @@ onMounted(load)
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                     <polyline points="22 4 12 14.01 9 11.01"/>
                   </svg>
-                  Verified Startup
+                  Project participant
                 </span>
               </div>
             </div>
@@ -397,8 +291,8 @@ onMounted(load)
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                 </svg>
                 <div class="detail-text">
-                  <span class="primary-text">Sarah Jenkins</span>
-                  <span class="secondary-text">Product Manager</span>
+                  <span class="primary-text">Freelancer ID</span>
+                  <span class="secondary-text">{{ project.freelancerId }}</span>
                 </div>
               </div>
               <div class="detail-row">
@@ -406,7 +300,8 @@ onMounted(load)
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                 </svg>
                 <div class="detail-text">
-                  <span class="primary-text">Austin, Texas (CST)</span>
+                  <span class="primary-text">Client ID</span>
+                  <span class="secondary-text">{{ project.clientId }}</span>
                 </div>
               </div>
               <div class="detail-row">
@@ -414,8 +309,8 @@ onMounted(load)
                   <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
                 <div class="detail-text">
-                  <span class="primary-text">Member since Jan 2023</span>
-                  <span class="secondary-text">4 projects completed</span>
+                  <span class="primary-text">Project ID</span>
+                  <span class="secondary-text">{{ project.id }}</span>
                 </div>
               </div>
             </div>

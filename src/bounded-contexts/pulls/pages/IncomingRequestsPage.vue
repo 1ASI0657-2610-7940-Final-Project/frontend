@@ -4,9 +4,10 @@ import { useRouter } from 'vue-router'
 import { useEngagementStore } from '@pulls/stores/engagementStore'
 import RequestDecisionModal from '../components/RequestDecisionModal.vue'
 import RequestStatusBadge from '../components/RequestStatusBadge.vue'
+import EmptyState from '../../../shared/components/EmptyState.vue'
 import LoadingState from '../../../shared/components/LoadingState.vue'
 import ErrorState from '../../../shared/components/ErrorState.vue'
-import type { DecideRequestPayload, RequestStatus } from '@pulls/types/engagement.types'
+import type { DecideRequestPayload } from '@pulls/types/engagement.types'
 
 const store = useEngagementStore()
 const router = useRouter()
@@ -16,153 +17,6 @@ const requestId = ref('')
 
 const PAGE_SIZE = 3
 const currentPage = ref(1)
-
-interface MockRequest {
-  id: string
-  clientName: string
-  title: string
-  message: string
-  proposedPrice: number
-  currency: string
-  proposedDeliveryDays: number
-  createdAt: string
-  status: RequestStatus
-}
-
-const mockRequests = ref<MockRequest[]>([
-  {
-    id: 'req-1',
-    clientName: 'Alex Mercer',
-    title: 'Full-Stack Web App MVP',
-    message: 'Looking for a React/Node.js setup...',
-    proposedPrice: 3500,
-    currency: 'USD',
-    proposedDeliveryDays: 14,
-    createdAt: '2023-10-24T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-2',
-    clientName: 'Sarah Jenkins',
-    title: 'Brand Identity Redesign',
-    message: 'Need new logo, color palette, and...',
-    proposedPrice: 1200,
-    currency: 'USD',
-    proposedDeliveryDays: 7,
-    createdAt: '2023-10-23T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-3',
-    clientName: 'Marcus King',
-    title: 'Financial Model Review',
-    message: 'Audit of Series A projection model...',
-    proposedPrice: 800,
-    currency: 'USD',
-    proposedDeliveryDays: 3,
-    createdAt: '2023-10-22T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-4',
-    clientName: 'Emily Davis',
-    title: 'Mobile App UI Design',
-    message: 'High-fidelity Figma screens for e-commerce...',
-    proposedPrice: 1500,
-    currency: 'USD',
-    proposedDeliveryDays: 10,
-    createdAt: '2023-10-21T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-5',
-    clientName: 'Daniel Chen',
-    title: 'Python Data Scraping Script',
-    message: 'Scrape product lists from major retail website...',
-    proposedPrice: 450,
-    currency: 'USD',
-    proposedDeliveryDays: 2,
-    createdAt: '2023-10-20T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-6',
-    clientName: 'Jessica Taylor',
-    title: 'WordPress Landing Page',
-    message: 'Elementor-based responsive page for real estate...',
-    proposedPrice: 600,
-    currency: 'USD',
-    proposedDeliveryDays: 5,
-    createdAt: '2023-10-19T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-7',
-    clientName: 'Michael Brown',
-    title: 'Copywriting for SaaS Website',
-    message: 'Write landing page copy, features, and pricing...',
-    proposedPrice: 750,
-    currency: 'USD',
-    proposedDeliveryDays: 4,
-    createdAt: '2023-10-18T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-8',
-    clientName: 'Sophia Martinez',
-    title: 'Video Intro Animation',
-    message: '10-second modern logo animation and reveal...',
-    proposedPrice: 300,
-    currency: 'USD',
-    proposedDeliveryDays: 3,
-    createdAt: '2023-10-17T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-9',
-    clientName: 'William Johnson',
-    title: 'API Security Audit',
-    message: 'Review Node/Express backend for security flaws...',
-    proposedPrice: 2000,
-    currency: 'USD',
-    proposedDeliveryDays: 8,
-    createdAt: '2023-10-16T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-10',
-    clientName: 'Olivia Wilson',
-    title: 'Database Schema Design',
-    message: 'Design PostgreSQL schema for logistics platform...',
-    proposedPrice: 900,
-    currency: 'USD',
-    proposedDeliveryDays: 6,
-    createdAt: '2023-10-15T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-11',
-    clientName: 'James Anderson',
-    title: 'Shopify Store Setup',
-    message: 'Configure payments, setup products and premium theme...',
-    proposedPrice: 1100,
-    currency: 'USD',
-    proposedDeliveryDays: 7,
-    createdAt: '2023-10-14T12:00:00Z',
-    status: 'PENDING' as const
-  },
-  {
-    id: 'req-12',
-    clientName: 'Isabella Thomas',
-    title: 'Technical Writing Guide',
-    message: 'Write API documentation and setup instructions...',
-    proposedPrice: 1300,
-    currency: 'USD',
-    proposedDeliveryDays: 9,
-    createdAt: '2023-10-13T12:00:00Z',
-    status: 'PENDING' as const
-  }
-])
 
 const requests = computed(() => {
   if (store.incomingRequests && store.incomingRequests.length > 0) {
@@ -178,7 +32,7 @@ const requests = computed(() => {
       status: r.status
     }))
   }
-  return mockRequests.value
+  return []
 })
 
 const totalPages = computed(() => Math.ceil(requests.value.length / PAGE_SIZE))
@@ -191,7 +45,7 @@ const refreshIncomingRequests = async () => {
   try {
     await store.fetchIncomingRequests()
   } catch (err) {
-    console.warn('Failed to fetch incoming requests, falling back to mock data:', err)
+    console.warn('Failed to fetch incoming requests:', err)
   }
 }
 
@@ -205,18 +59,6 @@ const openDecision = (id: string, next: 'ACCEPTED' | 'REJECTED') => {
 }
 
 const submitDecision = async (payload: DecideRequestPayload) => {
-  if (requestId.value.startsWith('req-')) {
-    const item = mockRequests.value.find(r => r.id === requestId.value)
-    if (item) {
-      item.status = payload.decision
-    }
-    open.value = false
-    if (payload.decision === 'ACCEPTED') {
-      window.confirm('Request accepted. Open project detail?')
-    }
-    return
-  }
-
   const response = await store.decideRequest(requestId.value, payload)
   open.value = false
   await store.fetchIncomingRequests()
@@ -271,6 +113,12 @@ onBeforeUnmount(() => {
     <div v-else-if="store.loading" class="loading-grid">
       <LoadingState v-for="i in 3" :key="i" />
     </div>
+
+    <EmptyState
+      v-else-if="!requests.length"
+      title="No incoming requests"
+      message="New client requests will appear here when they are created."
+    />
 
     <div v-else class="card table-card">
       <table class="data-table">

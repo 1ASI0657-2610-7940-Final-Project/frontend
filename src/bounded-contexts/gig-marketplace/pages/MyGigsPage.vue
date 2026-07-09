@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import LoadingState from '../../../shared/components/LoadingState.vue'
 import ErrorState from '../../../shared/components/ErrorState.vue'
+import EmptyState from '../../../shared/components/EmptyState.vue'
 import { useMarketplaceStore } from '@marketplace/stores/marketplaceStore'
 
 interface GigItem {
@@ -27,138 +28,6 @@ const currentTab = ref<'ALL' | 'ACTIVE' | 'DRAFT'>('ALL')
 const PAGE_SIZE = 3
 const currentPage = ref(1)
 
-// Mock Gigs representing the list in the screenshot to fill the screen if no backend data exists
-const mockGigs = ref<GigItem[]>([
-  {
-    id: 'mock-1',
-    title: 'Full-Stack Web Application Development',
-    description: 'Custom React & Node.js solutions for enterprise clients.',
-    views: '1.2k views',
-    saves: '45 saves',
-    status: 'Active',
-    price: 500,
-    priceUnit: 'per project',
-    image: '/mock-portfolio/laptop.png'
-  },
-  {
-    id: 'mock-2',
-    title: 'UI/UX Design for SaaS Platforms',
-    description: 'High-fidelity wireframes and interactive prototypes.',
-    views: '850 views',
-    saves: '22 saves',
-    status: 'Active',
-    price: 80,
-    priceUnit: 'hourly rate',
-    image: '/mock-portfolio/laptop.png'
-  },
-  {
-    id: 'mock-3',
-    title: 'Technical Writing & API Documentation',
-    description: 'Clear, concise developer docs (swagger, Postman).',
-    lastEdited: 'Last edited 2 days ago',
-    status: 'Draft',
-    price: null,
-    priceUnit: null,
-    image: null
-  },
-  {
-    id: 'mock-4',
-    title: 'Custom WordPress Theme Development',
-    description: 'Responsive and fast loading corporate themes.',
-    views: '410 views',
-    saves: '12 saves',
-    status: 'Active',
-    price: 350,
-    priceUnit: 'per project',
-    image: '/mock-portfolio/laptop.png'
-  },
-  {
-    id: 'mock-5',
-    title: 'API Integration & Database Migration',
-    description: 'Seamless connection with PostgreSQL and third-party APIs.',
-    views: '320 views',
-    saves: '8 saves',
-    status: 'Active',
-    price: 600,
-    priceUnit: 'per project',
-    image: '/mock-portfolio/chart.png'
-  },
-  {
-    id: 'mock-6',
-    title: 'SaaS Landing Page Design',
-    description: 'High-converting modern UI layouts using Figma.',
-    views: '980 views',
-    saves: '34 saves',
-    status: 'Active',
-    price: 250,
-    priceUnit: 'per project',
-    image: '/mock-portfolio/laptop.png'
-  },
-  {
-    id: 'mock-7',
-    title: 'Python Data Scraping Scripts',
-    description: 'Automated data extraction and CSV formatting tools.',
-    lastEdited: 'Last edited 1 day ago',
-    status: 'Draft',
-    price: null,
-    priceUnit: null,
-    image: null
-  },
-  {
-    id: 'mock-8',
-    title: 'Social Media Marketing Kit',
-    description: 'Branding elements, banner designs and post templates.',
-    views: '540 views',
-    saves: '19 saves',
-    status: 'Active',
-    price: 150,
-    priceUnit: 'per project',
-    image: '/mock-portfolio/chart.png'
-  },
-  {
-    id: 'mock-9',
-    title: 'E-commerce Shopify Store Setup',
-    description: 'Theme customization, payment configuration, and product uploads.',
-    views: '670 views',
-    saves: '25 saves',
-    status: 'Active',
-    price: 800,
-    priceUnit: 'per project',
-    image: '/mock-portfolio/laptop.png'
-  },
-  {
-    id: 'mock-10',
-    title: 'Mobile App UI Wireframing',
-    description: 'Figma blueprints and user flows for iOS/Android.',
-    lastEdited: 'Last edited 5 days ago',
-    status: 'Draft',
-    price: null,
-    priceUnit: null,
-    image: null
-  },
-  {
-    id: 'mock-11',
-    title: 'Node.js Backend REST API Development',
-    description: 'Secure Express.js endpoints with JWT auth.',
-    views: '880 views',
-    saves: '39 saves',
-    status: 'Active',
-    price: 75,
-    priceUnit: 'hourly rate',
-    image: '/mock-portfolio/laptop.png'
-  },
-  {
-    id: 'mock-12',
-    title: 'Search Engine Optimization Audit',
-    description: 'Detailed page speed and indexation reports.',
-    lastEdited: 'Last edited 1 week ago',
-    status: 'Draft',
-    price: null,
-    priceUnit: null,
-    image: null
-  }
-])
-
 const allGigs = computed<GigItem[]>(() => {
   if (store.myServices && store.myServices.length > 0) {
     return store.myServices.map((g) => ({
@@ -174,7 +43,7 @@ const allGigs = computed<GigItem[]>(() => {
       isReal: true
     }))
   }
-  return mockGigs.value
+  return []
 })
 
 const activeCount = computed(() => allGigs.value.filter((g) => g.status === 'Active').length)
@@ -209,11 +78,6 @@ const pagedGigs = computed(() => {
 const removeGig = async (id: string) => {
   const confirmed = window.confirm('Delete this gig?')
   if (!confirmed) return
-  
-  if (id.startsWith('mock-')) {
-    mockGigs.value = mockGigs.value.filter((g) => g.id !== id)
-    return
-  }
 
   try {
     await store.deleteService(id)
@@ -224,10 +88,6 @@ const removeGig = async (id: string) => {
 }
 
 const editGig = (id: string) => {
-  if (id.startsWith('mock-')) {
-    alert('Mock gigs cannot be edited. Try creating a new gig first!')
-    return
-  }
   router.push(`/freelancer/gigs/${id}/edit`)
 }
 
@@ -235,7 +95,7 @@ onMounted(async () => {
   try {
     await store.fetchMyServices()
   } catch (e) {
-    console.warn('Failed to fetch services, using mockup entries.', e)
+    console.warn('Failed to fetch services.', e)
   }
 })
 </script>
@@ -307,6 +167,12 @@ onMounted(async () => {
       <div v-if="store.loading" class="loading-wrap">
         <LoadingState />
       </div>
+
+      <EmptyState
+        v-else-if="!pagedGigs.length"
+        title="No gigs yet"
+        message="Your gigs will appear here once you create your first real service."
+      />
 
       <div v-else class="card table-card">
         <table class="data-table">

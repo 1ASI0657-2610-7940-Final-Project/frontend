@@ -8,24 +8,6 @@ const store = useEngagementStore()
 // Estados que cuentan como proyecto "en curso" para el freelancer.
 const ACTIVE_STATUSES = ['PENDING', 'IN_PROGRESS', 'DELIVERED']
 
-// Datos de respaldo: se muestran solo si el backend aún no devuelve información
-// (freelancer nuevo o servicio no disponible), replicando el patrón de ProjectsPage.
-const mockStats = [
-  { label: 'PENDING REQUESTS', value: '12', sub: '↑ 3 since last week', subColor: '#22c55e', icon: 'hourglass' },
-  { label: 'ACTIVE PROJECTS', value: '5', sub: 'All tracking on schedule', subColor: '#64748b', icon: 'team' },
-  { label: 'COMPLETED (MTD)', value: '8', sub: '↑ 12% volume increase', subColor: '#22c55e', icon: 'check' },
-]
-const mockActiveProjects = [
-  { title: 'UI Design System Update', subtitle: 'Milestone 2 Delivery', initials: 'AR', freelancer: 'Alex Rivera', dueDate: 'Oct 24, 2023', status: 'In Progress', statusColor: '#3b5bdb', statusBg: '#eef2ff' },
-  { title: 'Backend API Integration', subtitle: 'Stripe Webhooks', initials: 'SJ', freelancer: 'Sarah Jenkins', dueDate: 'Oct 26, 2023', status: 'In Review', statusColor: '#6366f1', statusBg: '#eef2ff' },
-]
-const mockRecentlyCompleted = [
-  { title: 'Marketing Copywriting', subtitle: '', freelancer: 'David Kim', completedDate: 'Oct 18, 2023' },
-  { title: 'Logo Redesign Concept', subtitle: '', freelancer: 'Elena Rossi', completedDate: 'Oct 15, 2023' },
-]
-
-const hasRealData = computed(() => store.projects.length > 0 || store.incomingRequests.length > 0)
-
 const shortId = (id: string) => (id ? id.slice(0, 8) : '')
 const initialsOf = (id: string) => (id ? id.replace(/-/g, '').slice(0, 2).toUpperCase() : '--')
 
@@ -44,7 +26,6 @@ const completedDateOf = (p: Project) => {
 }
 
 const activeProjects = computed(() => {
-  if (!hasRealData.value) return mockActiveProjects
   return store.projects
     .filter((p) => ACTIVE_STATUSES.includes(p.status))
     .map((p) => {
@@ -63,7 +44,6 @@ const activeProjects = computed(() => {
 })
 
 const recentlyCompleted = computed(() => {
-  if (!hasRealData.value) return mockRecentlyCompleted
   return store.projects
     .filter((p) => p.status === 'FINISHED')
     .map((p) => ({
@@ -75,7 +55,6 @@ const recentlyCompleted = computed(() => {
 })
 
 const stats = computed(() => {
-  if (!hasRealData.value) return mockStats
   const pending = store.incomingRequests.filter((r) => r.status === 'PENDING').length
   const active = store.projects.filter((p) => ACTIVE_STATUSES.includes(p.status)).length
   const completed = store.projects.filter((p) => p.status === 'FINISHED').length
@@ -142,7 +121,10 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(p, i) in activeProjects" :key="i">
+            <tr v-if="!activeProjects.length">
+              <td colspan="5" class="empty-row">No active projects yet.</td>
+            </tr>
+            <tr v-else v-for="(p, i) in activeProjects" :key="i">
               <td>
                 <div class="project-title">{{ p.title }}</div>
                 <div class="project-sub muted">{{ p.subtitle }}</div>
@@ -195,7 +177,10 @@ onMounted(() => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(p, i) in recentlyCompleted" :key="i">
+          <tr v-if="!recentlyCompleted.length">
+            <td colspan="4" class="empty-row">No completed projects yet.</td>
+          </tr>
+          <tr v-else v-for="(p, i) in recentlyCompleted" :key="i">
             <td>
               <div class="project-title">{{ p.title }}</div>
             </td>
@@ -253,6 +238,7 @@ onMounted(() => {
 .data-table th { text-align: left; padding: 0.65rem 1.25rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; font-weight: 700; border-bottom: 1px solid #e5e9f2; }
 .data-table td { padding: 0.85rem 1.25rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
 .data-table tbody tr:last-child td { border-bottom: none; }
+.empty-row { padding: 1.5rem 1.25rem; color: #64748b; font-size: 0.875rem; text-align: center; }
 .project-title { font-weight: 600; color: #0f172a; font-size: 0.875rem; }
 .project-sub { font-size: 0.775rem; margin-top: 2px; }
 .freelancer-cell { display: flex; align-items: center; gap: 0.5rem; }

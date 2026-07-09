@@ -20,13 +20,7 @@ const senderName = computed(() => {
     const participant = activeConv.participants.find(p => p.id === props.message.senderId)
     if (participant) return participant.displayName
   }
-  const nameMap: Record<string, string> = {
-    'sarah': 'Sarah Jenkins',
-    'mark': 'Mark Davis',
-    'alex': 'Alex Chen - TechNova',
-    'emily': 'Emily Wong'
-  }
-  return nameMap[props.message.senderId] || 'Other'
+  return 'Other'
 })
 
 const avatarMeta = computed(() => {
