@@ -20,6 +20,8 @@ const projectId = computed(() => route.params.id as string)
 
 const project = computed(() => store.selectedProject)
 const shortId = (value: string) => (value ? value.slice(0, 8).toUpperCase() : '--')
+const isClient = computed(() => auth.user?.role === 'CLIENT')
+const isFreelancer = computed(() => auth.user?.role === 'FREELANCER')
 
 // Deliverables Checklist state (interactive)
 const checklist = ref([
@@ -34,6 +36,11 @@ const revieweeId = computed(() => {
   if (!auth.user) return project.value.freelancerId || project.value.clientId || ''
   return auth.user.role === 'CLIENT' ? project.value.freelancerId : project.value.clientId
 })
+
+const canMarkDelivered = computed(() => isFreelancer.value && project.value?.status === 'IN_PROGRESS')
+const canMarkCompleted = computed(() => isClient.value && project.value?.status === 'DELIVERED')
+const messageButtonLabel = computed(() => (isClient.value ? 'Message Freelancer' : 'Message Client'))
+const statusActionLabel = computed(() => (canMarkCompleted.value ? 'Mark Completed' : 'Mark Delivered'))
 
 const load = async () => {
   store.error = null
@@ -60,6 +67,16 @@ const markDelivered = async () => {
     await load()
   } catch (e) {
     console.error('Failed to update project status:', e)
+  }
+}
+
+const markCompleted = async () => {
+  if (!project.value) return
+  try {
+    await store.updateProjectStatus(projectId.value, { status: 'FINISHED' })
+    await load()
+  } catch (e) {
+    console.error('Failed to complete project:', e)
   }
 }
 
@@ -125,21 +142,24 @@ onMounted(load)
           <h1 class="project-title">{{ project.serviceId }}</h1>
         </div>
         <div class="header-right">
-          <button class="btn-message" @click="openChat">Message Client</button>
+          <button class="btn-message" @click="openChat">{{ messageButtonLabel }}</button>
           <button 
-            v-if="project.status === 'IN_PROGRESS' || project.status === 'PENDING'"
+            v-if="canMarkDelivered || canMarkCompleted"
             class="btn-deliver" 
-            @click="markDelivered"
+            @click="canMarkCompleted ? markCompleted() : markDelivered()"
           >
             <!-- White Check Icon Inside Circle -->
             <svg class="deliver-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" fill="white" stroke="currentColor"/>
               <polyline points="16 9 11 14 8 11" stroke="#2563eb"/>
             </svg>
-            Mark Delivered
+            {{ statusActionLabel }}
           </button>
           <button v-else-if="project.status === 'DELIVERED'" class="btn-deliver" disabled>
             Delivered
+          </button>
+          <button v-else-if="project.status === 'FINISHED'" class="btn-deliver" disabled>
+            Completed
           </button>
           <button v-else class="btn-deliver" @click="openReportModal = true">
             Report User
